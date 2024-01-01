@@ -2,6 +2,7 @@ import 'package:delivery/firebase/firebase_api.dart';
 import 'package:delivery/firebase/order.dart';
 import 'package:delivery/firebase_options.dart';
 import 'package:delivery/home/home.dart';
+import 'package:delivery/onboarding/login/login.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
@@ -21,7 +22,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: HomePage(),
+        home: const MyPhone(),
         navigatorKey: navigatorKey,
         routes: {'/order': (context) => const OrderPage()});
   }
