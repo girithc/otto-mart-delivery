@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -8,6 +11,28 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  OrderAssigned? orderAssigned;
+  Future<void> checkForOrders() async {
+    String phone = '1234567890';
+    final response = await http.post(
+      Uri.parse('/delivery-partner-check-order'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        'phone': phone,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        orderAssigned = OrderAssigned.fromJson(jsonDecode(response.body));
+      });
+    } else {
+      // Handle error...
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -42,7 +67,9 @@ class _HomePageState extends State<HomePage> {
           children: [
             const SizedBox(height: 10),
             GestureDetector(
-              onTap: () => {},
+              onTap: () => {
+                checkForOrders() // Now just calling the function
+              },
               child: Center(
                 child: Container(
                   height: MediaQuery.of(context).size.height * 0.1,
@@ -172,6 +199,35 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class OrderAssigned {
+  final int id;
+  final int deliveryPartnerId;
+  final int storeId;
+  final DateTime orderDate;
+  final String orderStatus;
+  final String deliveryPartnerStatus;
+
+  OrderAssigned({
+    required this.id,
+    required this.deliveryPartnerId,
+    required this.storeId,
+    required this.orderDate,
+    required this.orderStatus,
+    required this.deliveryPartnerStatus,
+  });
+
+  factory OrderAssigned.fromJson(Map<String, dynamic> json) {
+    return OrderAssigned(
+      id: json['id'],
+      deliveryPartnerId: json['delivery_partner_id'],
+      storeId: json['store_id'],
+      orderDate: DateTime.parse(json['order_date']),
+      orderStatus: json['order_status'],
+      deliveryPartnerStatus: json['order_dp_status'],
     );
   }
 }
