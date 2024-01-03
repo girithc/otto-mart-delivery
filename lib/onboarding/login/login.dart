@@ -1,10 +1,14 @@
 import 'dart:convert';
 import 'package:delivery/home/home.dart';
+import 'package:delivery/onboarding/details/details.dart';
 import 'package:delivery/onboarding/legal/privacy.dart';
 import 'package:delivery/onboarding/legal/terms.dart';
+import 'package:delivery/utils/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:pinput/pinput.dart';
+import 'package:tuple/tuple.dart';
 
 // Main widget for phone number verification
 class MyPhone extends StatefulWidget {
@@ -28,10 +32,49 @@ class _MyPhoneState extends State<MyPhone> {
     super.initState();
   }
 
-  void _showSnackbar(String message) {
+  void _showSnackbar(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(
+        content: Text(
+          message,
+          style: TextStyle(color: Colors.black),
+        ),
+        backgroundColor: color,
+      ),
     );
+  }
+
+  // Create an instance of FlutterSecureStorage
+  final _storage = FlutterSecureStorage();
+
+  Future<Tuple2<bool, bool>> _handleLogin() async {
+    final phone = phoneNumberController.text;
+    final response = await http.post(
+      Uri.parse(
+          '$baseUrl/delivery-partner-login'), // Replace with your API endpoint
+      body: jsonEncode({'phone': phone}),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      // Decode the JSON response
+      final responseData = jsonDecode(response.body);
+
+      // Check if the name field exists and store it
+      final String? name = responseData['name'];
+      print(response.body);
+      if (name != null && name.isNotEmpty) {
+        _showSnackbar('Name: $name', Colors.green);
+        return Tuple2(true, true);
+      } else {
+        _showSnackbar('Name empty', Colors.amberAccent);
+        return Tuple2(false, true);
+      }
+    } else {
+      _showSnackbar('Login Failed', Colors.purpleAccent);
+      print(response.body);
+      return Tuple2(false, false);
+    }
   }
 
   @override
@@ -136,13 +179,26 @@ class _MyPhoneState extends State<MyPhone> {
                         ),
                       ),
                       onPressed: () {
-                        _showSnackbar('Login Initiated');
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const HomePage(),
-                          ),
-                        );
+                        _handleLogin().then((value) => {
+                              if (value.item1)
+                                {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const HomePage(),
+                                    ),
+                                  )
+                                }
+                              else if (value.item2)
+                                {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const DetailsPage(),
+                                    ),
+                                  )
+                                }
+                            });
                       },
                       child: const Text(
                         "Login",
