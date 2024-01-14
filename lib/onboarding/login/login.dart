@@ -65,6 +65,11 @@ class _MyPhoneState extends State<MyPhone> {
       print(response.body);
       if (name != null && name.isNotEmpty) {
         _showSnackbar('Name: $name', Colors.green);
+
+        // Store the phone number in Flutter Secure Storage as partnerId
+        await _storage.write(key: 'partnerId', value: phone);
+        await _storage.write(key: 'name', value: name);
+
         return Tuple2(true, true);
       } else {
         _showSnackbar('Name empty', Colors.amberAccent);

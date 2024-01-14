@@ -1,6 +1,9 @@
 import 'dart:convert';
 
+import 'package:delivery/onboarding/login/login.dart';
+import 'package:delivery/utils/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
@@ -12,10 +15,41 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   OrderAssigned? orderAssigned;
+  bool isCheckingOrders = false;
+  String greetingName = "Partner"; // Default greeting name
+  final _storage = FlutterSecureStorage();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadName();
+    // ... other initializations ...
+  }
+
+  Future<void> _clearSecureStorage() async {
+    await _storage.deleteAll();
+  }
+
+  Future<void> _loadName() async {
+    String? name = await _storage.read(key: 'name');
+    if (name != null && name.isNotEmpty) {
+      setState(() {
+        greetingName = name;
+      });
+    }
+  }
+
   Future<void> checkForOrders() async {
+    setState(() {
+      isCheckingOrders = true;
+    });
+
+    // Simulate a network request
     String phone = '1234567890';
+    await Future.delayed(const Duration(seconds: 2)); // Simulate network delay
+
     final response = await http.post(
-      Uri.parse('/delivery-partner-check-order'),
+      Uri.parse('$baseUrl/delivery-partner-check-order'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -27,9 +61,13 @@ class _HomePageState extends State<HomePage> {
     if (response.statusCode == 200) {
       setState(() {
         orderAssigned = OrderAssigned.fromJson(jsonDecode(response.body));
+        isCheckingOrders = false;
       });
     } else {
       // Handle error...
+      setState(() {
+        isCheckingOrders = false;
+      });
     }
   }
 
@@ -38,8 +76,8 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
           toolbarHeight: 80,
-          title: const Text(
-            'Delivery',
+          title: Text(
+            'Hi $greetingName',
             style: TextStyle(fontSize: 25, color: Colors.black),
           ),
           centerTitle: true,
@@ -59,7 +97,13 @@ class _HomePageState extends State<HomePage> {
             child: IconButton(
                 icon: const Icon(Icons.person),
                 color: Colors.white, // Icon color
-                onPressed: () {}),
+                onPressed: () async {
+                  await _clearSecureStorage();
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (context) => const MyPhone()),
+                    (Route<dynamic> route) => false,
+                  );
+                }),
           )),
       body: SingleChildScrollView(
         child: Column(
@@ -67,47 +111,24 @@ class _HomePageState extends State<HomePage> {
           children: [
             const SizedBox(height: 10),
             GestureDetector(
-              onTap: () => {
-                checkForOrders() // Now just calling the function
+              onTap: () {
+                if (!isCheckingOrders) {
+                  checkForOrders();
+                }
               },
-              child: Center(
-                child: Container(
-                  height: MediaQuery.of(context).size.height * 0.1,
-                  width: MediaQuery.of(context).size.width * 0.85,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15), // Rounded borders
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.25), // Shadow color
-                        spreadRadius: 0,
-                        blurRadius: 20, // Increased shadow blur
-                        offset:
-                            const Offset(0, 10), // Increased vertical offset
+              child: isCheckingOrders
+                  ? Center(
+                      child: Container(
+                        height: MediaQuery.of(context).size.height * 0.1,
+                        width: MediaQuery.of(context).size.width * 0.85,
+                        padding: const EdgeInsets.all(10),
+                        child: LinearProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.blue),
+                        ),
                       ),
-                    ],
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment
-                        .center, // Center the row contents horizontally
-                    children: [
-                      Icon(
-                        Icons.refresh, // Refresh icon
-                        color: Colors.black,
-                        size: 30, // Icon color
-                      ),
-                      SizedBox(width: 10),
-                      Text(
-                        'Check for Orders',
-                        style: TextStyle(
-                            fontSize: 25,
-                            color: Colors.black,
-                            fontWeight: FontWeight.normal),
-                      ), // Spacing between text and icon
-                    ],
-                  ),
-                ),
-              ),
+                    )
+                  : buildCheckOrdersTile(context),
             ),
             const SizedBox(height: 10),
             GestureDetector(
@@ -195,6 +216,39 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildCheckOrdersTile(BuildContext context) {
+    return Center(
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.1,
+        width: MediaQuery.of(context).size.width * 0.85,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15), // Rounded borders
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.25), // Shadow color
+              spreadRadius: 0,
+              blurRadius: 20, // Increased shadow blur
+              offset: const Offset(0, 10), // Increased vertical offset
+            ),
+          ],
+        ),
+        // Rest of your container styling...
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.refresh, color: Colors.black, size: 30),
+            SizedBox(width: 10),
+            Text(
+              'Check for Orders',
+              style: TextStyle(fontSize: 25, color: Colors.black),
             ),
           ],
         ),
