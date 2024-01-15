@@ -17,7 +17,7 @@ class _HomePageState extends State<HomePage> {
   OrderAssigned? orderAssigned;
   bool isCheckingOrders = false;
   String greetingName = "Partner"; // Default greeting name
-  final _storage = FlutterSecureStorage();
+  final _storage = const FlutterSecureStorage();
 
   @override
   void initState() {
@@ -59,6 +59,7 @@ class _HomePageState extends State<HomePage> {
     );
 
     if (response.statusCode == 200) {
+      print(response.body);
       setState(() {
         orderAssigned = OrderAssigned.fromJson(jsonDecode(response.body));
         isCheckingOrders = false;
@@ -78,7 +79,7 @@ class _HomePageState extends State<HomePage> {
           toolbarHeight: 80,
           title: Text(
             'Hi $greetingName',
-            style: TextStyle(fontSize: 25, color: Colors.black),
+            style: const TextStyle(fontSize: 25, color: Colors.black),
           ),
           centerTitle: true,
           leading: Container(
@@ -122,7 +123,7 @@ class _HomePageState extends State<HomePage> {
                         height: MediaQuery.of(context).size.height * 0.1,
                         width: MediaQuery.of(context).size.width * 0.85,
                         padding: const EdgeInsets.all(10),
-                        child: LinearProgressIndicator(
+                        child: const LinearProgressIndicator(
                           valueColor:
                               AlwaysStoppedAnimation<Color>(Colors.blue),
                         ),
@@ -131,34 +132,9 @@ class _HomePageState extends State<HomePage> {
                   : buildCheckOrdersTile(context),
             ),
             const SizedBox(height: 10),
-            GestureDetector(
-              onTap: () {},
-              child: Container(
-                height: MediaQuery.of(context).size.height * 0.2,
-                width: MediaQuery.of(context).size.width * 0.85,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15), // Rounded borders
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.25), // Shadow color
-                      spreadRadius: 0,
-                      blurRadius: 20, // Increased shadow blur
-                      offset: const Offset(0, 10), // Increased vertical offset
-                    ),
-                  ],
-                ),
-                child: const Center(
-                  child: Text(
-                    'No Current Order',
-                    style: TextStyle(
-                        fontSize: 25,
-                        color: Colors.black54,
-                        fontWeight: FontWeight.normal),
-                  ),
-                ),
-              ),
-            ),
+            orderAssigned != null
+                ? buildOrderAssignedWidget()
+                : buildNoOrderWidget(context),
             const SizedBox(height: 10),
             GestureDetector(
               onTap: () {},
@@ -250,6 +226,96 @@ class _HomePageState extends State<HomePage> {
               'Check for Orders',
               style: TextStyle(fontSize: 25, color: Colors.black),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildNoOrderWidget(BuildContext context) {
+    return GestureDetector(
+      onTap: () {},
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.2,
+        width: MediaQuery.of(context).size.width * 0.85,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15), // Rounded borders
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.25), // Shadow color
+              spreadRadius: 0,
+              blurRadius: 20, // Increased shadow blur
+              offset: const Offset(0, 10), // Increased vertical offset
+            ),
+          ],
+        ),
+        child: const Center(
+          child: Text(
+            'No Current Order',
+            style: TextStyle(
+                fontSize: 25,
+                color: Colors.black54,
+                fontWeight: FontWeight.normal),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget buildOrderAssignedWidget() {
+    return GestureDetector(
+      onTap: () {},
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.2,
+        width: MediaQuery.of(context).size.width * 0.85,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15), // Rounded borders
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.deepPurpleAccent,
+              Colors.deepPurple,
+            ], // Gradient colors
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.25), // Shadow color
+              spreadRadius: 0,
+              blurRadius: 20, // Increased shadow blur
+              offset: const Offset(0, 10), // Increased vertical offset
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                      5), // Adjust for more squarish shape
+                ),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 30,
+                    vertical: 15), // Inner padding of the button
+              ),
+              child: const Text(
+                'Accept Order',
+                style: TextStyle(
+                    fontSize: 27,
+                    color: Colors.black,
+                    fontWeight: FontWeight.normal),
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Skip Order',
+              style: TextStyle(fontSize: 20, color: Colors.white),
+            )
           ],
         ),
       ),
