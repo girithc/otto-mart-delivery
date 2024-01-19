@@ -111,26 +111,28 @@ class _HomePageState extends State<HomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const SizedBox(height: 10),
-            GestureDetector(
-              onTap: () {
-                if (!isCheckingOrders) {
-                  checkForOrders();
-                }
-              },
-              child: isCheckingOrders
-                  ? Center(
-                      child: Container(
-                        height: MediaQuery.of(context).size.height * 0.1,
-                        width: MediaQuery.of(context).size.width * 0.85,
-                        padding: const EdgeInsets.all(10),
-                        child: const LinearProgressIndicator(
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.blue),
-                        ),
-                      ),
-                    )
-                  : buildCheckOrdersTile(context),
-            ),
+            orderAssigned == null
+                ? GestureDetector(
+                    onTap: () {
+                      if (!isCheckingOrders) {
+                        checkForOrders();
+                      }
+                    },
+                    child: isCheckingOrders
+                        ? Center(
+                            child: Container(
+                              height: MediaQuery.of(context).size.height * 0.1,
+                              width: MediaQuery.of(context).size.width * 0.85,
+                              padding: const EdgeInsets.all(10),
+                              child: const LinearProgressIndicator(
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.blue),
+                              ),
+                            ),
+                          )
+                        : buildCheckOrdersTile(context),
+                  )
+                : Container(),
             const SizedBox(height: 10),
             orderAssigned != null
                 ? buildOrderAssignedWidget()
@@ -267,7 +269,7 @@ class _HomePageState extends State<HomePage> {
     return GestureDetector(
       onTap: () {},
       child: Container(
-        height: MediaQuery.of(context).size.height * 0.2,
+        height: MediaQuery.of(context).size.height * 0.3,
         width: MediaQuery.of(context).size.width * 0.85,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(15), // Rounded borders
@@ -306,15 +308,22 @@ class _HomePageState extends State<HomePage> {
               child: const Text(
                 'Accept Order',
                 style: TextStyle(
-                    fontSize: 27,
+                    fontSize: 28,
                     color: Colors.black,
                     fontWeight: FontWeight.normal),
               ),
             ),
             const SizedBox(height: 10),
-            const Text(
-              'Skip Order',
-              style: TextStyle(fontSize: 20, color: Colors.white),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  orderAssigned = null;
+                });
+              },
+              child: const Text(
+                'Skip Order',
+                style: TextStyle(fontSize: 20, color: Colors.white),
+              ),
             )
           ],
         ),
