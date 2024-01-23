@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:delivery/home/order/order_page.dart';
 import 'package:delivery/onboarding/login/login.dart';
 import 'package:delivery/utils/constants.dart';
 import 'package:flutter/material.dart';
@@ -23,7 +24,6 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _loadName();
-    // ... other initializations ...
   }
 
   Future<void> _clearSecureStorage() async {
@@ -69,6 +69,35 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         isCheckingOrders = false;
       });
+    }
+  }
+
+  Future<OrderAcceptedDP> acceptOrder() async {
+    final Uri url = Uri.parse('$baseUrl/delivery-partner-accept-order');
+
+    String? phone = await _storage.read(key: 'partnerId');
+    try {
+      final response = await http.post(
+        url,
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode({'phone': phone, 'sales_order_id': orderAssigned?.id}),
+      );
+
+      if (response.statusCode == 200) {
+        final OrderAcceptedDP order =
+            OrderAcceptedDP.fromJson(json.decode(response.body));
+
+        return order;
+      } else {
+        // Handle non-200 responses
+        throw Exception(
+            'Failed to accept order. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      // Handle network errors, parsing errors, etc
+      throw Exception('Error accepting order: $e');
     }
   }
 
@@ -168,7 +197,13 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 10),
             GestureDetector(
-              onTap: () {},
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const OrderPage(),
+                  ),
+                );
+              },
               child: Container(
                 height: MediaQuery.of(context).size.height * 0.1,
                 width: MediaQuery.of(context).size.width * 0.85,
@@ -295,7 +330,9 @@ class _HomePageState extends State<HomePage> {
           children: [
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                acceptOrder().then((value) {});
+              },
               style: ElevatedButton.styleFrom(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(
@@ -354,6 +391,41 @@ class OrderAssigned {
       id: json['id'],
       deliveryPartnerId: json['delivery_partner_id'],
       storeId: json['store_id'],
+      orderDate: DateTime.parse(json['order_date']),
+      orderStatus: json['order_status'],
+      deliveryPartnerStatus: json['order_dp_status'],
+    );
+  }
+}
+
+class OrderAcceptedDP {
+  final int id;
+  final int deliveryPartnerId;
+  final int storeId;
+  final String storeName;
+  final String storeAddress;
+  final DateTime orderDate;
+  final String orderStatus;
+  final String deliveryPartnerStatus;
+
+  OrderAcceptedDP({
+    required this.id,
+    required this.deliveryPartnerId,
+    required this.storeId,
+    required this.storeName,
+    required this.storeAddress,
+    required this.orderDate,
+    required this.orderStatus,
+    required this.deliveryPartnerStatus,
+  });
+
+  factory OrderAcceptedDP.fromJson(Map<String, dynamic> json) {
+    return OrderAcceptedDP(
+      id: json['id'],
+      deliveryPartnerId: json['delivery_partner_id'],
+      storeId: json['store_id'],
+      storeName: json['store_name'],
+      storeAddress: json['store_address'],
       orderDate: DateTime.parse(json['order_date']),
       orderStatus: json['order_status'],
       deliveryPartnerStatus: json['order_dp_status'],
