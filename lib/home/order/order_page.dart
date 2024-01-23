@@ -1,8 +1,10 @@
+import 'package:delivery/home/home.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 class OrderPage extends StatefulWidget {
-  const OrderPage({super.key});
+  OrderPage({required this.order, super.key});
+  OrderAcceptedDP order;
 
   @override
   State<OrderPage> createState() => _OrderPageState();
@@ -45,7 +47,7 @@ class _OrderPageState extends State<OrderPage> {
                   borderSide: BorderSide.none, // No border side
                 ),
               ),
-              initialValue: '',
+              initialValue: widget.order.id.toString(),
               validator: _requiredValidator,
             ),
             const SizedBox(height: 25),
@@ -64,7 +66,7 @@ class _OrderPageState extends State<OrderPage> {
                   borderSide: BorderSide.none, // No border side
                 ),
               ),
-              initialValue: '',
+              initialValue: widget.order.storeName,
               validator: _requiredValidator,
             ),
             const SizedBox(height: 25),
@@ -83,41 +85,51 @@ class _OrderPageState extends State<OrderPage> {
                   borderSide: BorderSide.none, // No border side
                 ),
               ),
-              initialValue: '',
+              initialValue: widget.order.storeAddress,
             ),
             const SizedBox(height: 25),
-            FormBuilderTextField(
-              name: 'locality',
-              decoration: InputDecoration(
-                labelText: 'Order DateTime',
-                hintText: 'Order DateTime',
-                filled: true, // Enable filling of the input
-                fillColor:
-                    Colors.grey[200], // Set light grey color as the background
-                border: OutlineInputBorder(
-                  // Define the border
-                  borderRadius:
-                      BorderRadius.circular(10.0), // Circular rounded border
-                  borderSide: BorderSide.none, // No border side
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: FormBuilderTextField(
+                    name: 'locality',
+                    decoration: InputDecoration(
+                      labelText: 'Order DateTime',
+                      hintText: 'Order DateTime',
+                      filled: true, // Enable filling of the input
+                      fillColor: Colors
+                          .grey[200], // Set light grey color as the background
+                      border: OutlineInputBorder(
+                        // Define the border
+                        borderRadius: BorderRadius.circular(
+                            10.0), // Circular rounded border
+                        borderSide: BorderSide.none, // No border side
+                      ),
+                    ),
+                    initialValue: widget.order.orderDate.toIso8601String(),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 25),
-            FormBuilderTextField(
-              name: 'lineOneAddress',
-              decoration: InputDecoration(
-                labelText: 'Order Status',
-                hintText: 'Order Status',
-                filled: true, // Enable filling of the input
-                fillColor:
-                    Colors.grey[200], // Set light grey color as the background
-                border: OutlineInputBorder(
-                  // Define the border
-                  borderRadius:
-                      BorderRadius.circular(10.0), // Circular rounded border
-                  borderSide: BorderSide.none, // No border side
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FormBuilderTextField(
+                    name: 'lineOneAddress',
+                    decoration: InputDecoration(
+                      labelText: 'Order Status',
+                      hintText: 'Order Status',
+                      filled: true, // Enable filling of the input
+                      fillColor: Colors
+                          .grey[200], // Set light grey color as the background
+                      border: OutlineInputBorder(
+                        // Define the border
+                        borderRadius: BorderRadius.circular(
+                            10.0), // Circular rounded border
+                        borderSide: BorderSide.none, // No border side
+                      ),
+                    ),
+                    initialValue: widget.order.orderStatus,
+                  ),
                 ),
-              ),
+              ],
             ),
             const SizedBox(height: 25),
             FormBuilderTextField(
@@ -135,6 +147,7 @@ class _OrderPageState extends State<OrderPage> {
                   borderSide: BorderSide.none, // No border side
                 ),
               ),
+              initialValue: widget.order.deliveryPartnerStatus,
             ),
             const SizedBox(height: 50),
             ElevatedButton(

@@ -93,7 +93,7 @@ class _HomePageState extends State<HomePage> {
       } else {
         // Handle non-200 responses
         throw Exception(
-            'Failed to accept order. Status code: ${response.statusCode}');
+            'Failed to accept order. Status code: ${response.body}');
       }
     } catch (e) {
       // Handle network errors, parsing errors, etc
@@ -197,13 +197,7 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 10),
             GestureDetector(
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const OrderPage(),
-                  ),
-                );
-              },
+              onTap: () {},
               child: Container(
                 height: MediaQuery.of(context).size.height * 0.1,
                 width: MediaQuery.of(context).size.width * 0.85,
@@ -331,7 +325,22 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                acceptOrder().then((value) {});
+                acceptOrder().then((value) {
+                  if (value != Null) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => OrderPage(order: value),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Failed to accept order'),
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                });
               },
               style: ElevatedButton.styleFrom(
                 shape: RoundedRectangleBorder(
