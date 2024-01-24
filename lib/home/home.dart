@@ -72,7 +72,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<OrderAcceptedDP> acceptOrder() async {
+  Future<OrderAcceptedDP?> acceptOrder() async {
     final Uri url = Uri.parse('$baseUrl/delivery-partner-accept-order');
 
     String? phone = await _storage.read(key: 'partnerId');
@@ -326,7 +326,7 @@ class _HomePageState extends State<HomePage> {
             ElevatedButton(
               onPressed: () {
                 acceptOrder().then((value) {
-                  if (value != Null) {
+                  if (value != null) {
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => OrderPage(order: value),
