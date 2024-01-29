@@ -29,7 +29,7 @@ class _OrderPageState extends State<OrderPage> {
     return null;
   }
 
-  Future<PickupOrderInfo?> pickupOrder() async {
+  Future<PickupOrderResult?> pickupOrder() async {
     final Uri url = Uri.parse('$baseUrl/delivery-partner-pickup-order');
 
     String? phone = await _storage.read(key: 'partnerId');
@@ -44,11 +44,15 @@ class _OrderPageState extends State<OrderPage> {
       print("phone $phone, order id ${widget.order.id}");
 
       if (response.statusCode == 200) {
-        return PickupOrderInfo.fromJson(json.decode(response.body));
+        return PickupOrderResult(
+            orderInfo: PickupOrderInfo.fromJson(json.decode(response.body)),
+            success: true);
       } else if (response.statusCode == 304) {
         // Return null for status code 304
         print(response.body);
-        return null;
+        return PickupOrderResult(orderInfo: null, success: true);
+      } else if (response.statusCode == 423 || response.statusCode == 500) {
+        return PickupOrderResult(orderInfo: null, success: false);
       } else {
         print(response.body);
 
@@ -60,6 +64,82 @@ class _OrderPageState extends State<OrderPage> {
       // Handle network errors, parsing errors, etc
       throw Exception('Error accepting order: $e');
     }
+    return null;
+  }
+
+  void _showQRCodeDialog(BuildContext context) async {
+    final String? phone = await _storage.read(key: 'partnerId');
+
+    // Ensure phone is not null, otherwise, use a default value or handle the error
+    final String phoneValue = phone ?? 'Unknown';
+
+    // Use the phoneValue in your data string
+    final String data = "$phoneValue-${widget.order.id}";
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          elevation: 4.0,
+          shape: const RoundedRectangleBorder(
+            // Set the shape of the dialog
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+          ),
+          title: const Text("Order QR Code"),
+          content: SizedBox(
+            height: 300,
+            width: 300,
+            child: QrImageView(
+              data: data,
+              version: QrVersions.auto,
+              size: 300.0,
+              gapless: false,
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor:
+                    const Color.fromRGBO(98, 0, 238, 1), // Button text color
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Close',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showOrderNotPackedDialog(BuildContext context, String data) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Error"),
+          content: Text(data),
+          actions: <Widget>[
+            TextButton(
+              child: const Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -204,15 +284,21 @@ class _OrderPageState extends State<OrderPage> {
                 onPressed: () async {
                   pickupOrder().then((value) {
                     if (value != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Order is dispatched"),
-                          backgroundColor:
-                              Colors.green, // Optional: for a green background
-                        ),
-                      );
+                      if (value.orderInfo != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Order is dispatched"),
+                            backgroundColor: Colors
+                                .green, // Optional: for a green background
+                          ),
+                        );
+                      } else if (value.success == true) {
+                        _showQRCodeDialog(context);
+                      } else if (value.success == false) {
+                        _showOrderNotPackedDialog(context, "ORDER NOT PACKED");
+                      }
                     } else {
-                      _showQRCodeDialog(context, widget.order.id.toString());
+                      _showOrderNotPackedDialog(context, "ERROR");
                     }
                   });
                 },
@@ -238,53 +324,13 @@ class _OrderPageState extends State<OrderPage> {
       ),
     );
   }
+}
 
-  void _showQRCodeDialog(BuildContext context, String data) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.white,
-          elevation: 4.0,
-          shape: const RoundedRectangleBorder(
-            // Set the shape of the dialog
-            borderRadius: BorderRadius.all(Radius.circular(8)),
-          ),
-          title: const Text("Order QR Code"),
-          content: SizedBox(
-            height: 300,
-            width: 300,
-            child: QrImageView(
-              data: data,
-              version: QrVersions.auto,
-              size: 300.0,
-              gapless: false,
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor:
-                    const Color.fromRGBO(98, 0, 238, 1), // Button text color
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'Close',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+class PickupOrderResult {
+  final PickupOrderInfo? orderInfo;
+  final bool? success;
+
+  PickupOrderResult({this.orderInfo, this.success});
 }
 
 class PickupOrderInfo {

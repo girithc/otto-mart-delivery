@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:delivery/main.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
@@ -6,9 +8,15 @@ class FirebaseApi {
 
   Future<void> initNotifications() async {
     // request permission from user (prompt)
-    await _firebaseMessaging.requestPermission();
-    final FCMToken = await _firebaseMessaging.getToken();
-    print('Token $FCMToken');
+
+    if (Platform.isIOS) {
+      String? apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+      print("APNS Token: $apnsToken");
+    } else {
+      await _firebaseMessaging.requestPermission();
+      final FCMToken = await _firebaseMessaging.getToken();
+      print('Token $FCMToken');
+    }
 
     initPushNotifications();
   }
