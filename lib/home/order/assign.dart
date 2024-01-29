@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:delivery/home/home.dart';
+import 'package:delivery/home/order/onroute.dart';
 import 'package:delivery/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -8,15 +9,15 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:http/http.dart' as http;
 
-class OrderPage extends StatefulWidget {
-  OrderPage({required this.order, super.key});
+class OrderAssignedPage extends StatefulWidget {
+  OrderAssignedPage({required this.order, super.key});
   OrderAcceptedDP order;
 
   @override
-  State<OrderPage> createState() => _OrderPageState();
+  State<OrderAssignedPage> createState() => _OrderAssignedPageState();
 }
 
-class _OrderPageState extends State<OrderPage> {
+class _OrderAssignedPageState extends State<OrderAssignedPage> {
   final _formKey = GlobalKey<FormBuilderState>();
   final _storage = const FlutterSecureStorage();
 
@@ -44,6 +45,7 @@ class _OrderPageState extends State<OrderPage> {
       print("phone $phone, order id ${widget.order.id}");
 
       if (response.statusCode == 200) {
+        print("Sucess: ${response.body}");
         return PickupOrderResult(
             orderInfo: PickupOrderInfo.fromJson(json.decode(response.body)),
             success: true);
@@ -290,6 +292,14 @@ class _OrderPageState extends State<OrderPage> {
                             content: Text("Order is dispatched"),
                             backgroundColor: Colors
                                 .green, // Optional: for a green background
+                          ),
+                        );
+
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                OnRoutePage(order: value.orderInfo!),
                           ),
                         );
                       } else if (value.success == true) {
