@@ -11,10 +11,13 @@ import 'dart:convert';
 import 'package:delivery/onboarding/login/login.dart'; // Import your Phone/Login page here
 
 final navigatorKey = GlobalKey<NavigatorState>();
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  if (Firebase.apps.isEmpty) {
+    // Check if any Firebase apps have been initialized
+    await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform);
+  }
   await FirebaseApi().initNotifications();
   runApp(const MyApp());
 }

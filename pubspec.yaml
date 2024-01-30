@@ -39,7 +39,6 @@ dependencies:
   http: ^1.1.2
   webview_flutter: ^4.4.2
   flutter_secure_storage: ^9.0.0
-  connectivity_plus: ^5.0.2
   tuple: ^2.0.2
   image_picker: ^1.0.5
   google_maps_flutter: ^2.5.1

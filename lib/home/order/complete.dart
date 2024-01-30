@@ -38,7 +38,6 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
     final path =
         'delivery-partner/sales-order/${widget.customerPhone}/${widget.orderDate}';
 
-    /*
     final ref = FirebaseStorage.instance.ref().child(path);
     print("Size ${_image!.path}");
     try {
@@ -47,7 +46,7 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
     } catch (e) {
       print('Upload failed: $e');
     }
-    */
+    /*
     final storageRef = FirebaseStorage.instance.ref().child("files/uid");
     try {
       final listResult = await storageRef.listAll();
@@ -55,6 +54,7 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
       // Caught an exception from Firebase.
       print("Failed with error '${e.code}': ${e.message}");
     }
+    */
   }
 
   @override
