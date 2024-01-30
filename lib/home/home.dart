@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:delivery/home/order/order_page.dart';
+import 'package:delivery/home/order/assign.dart';
 import 'package:delivery/onboarding/login/login.dart';
 import 'package:delivery/utils/constants.dart';
 import 'package:flutter/material.dart';
@@ -329,7 +329,7 @@ class _HomePageState extends State<HomePage> {
                   if (value != null) {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => OrderPage(order: value),
+                        builder: (context) => OrderAssignedPage(order: value),
                       ),
                     );
                   } else {
