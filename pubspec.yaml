@@ -46,6 +46,7 @@ dependencies:
   google_maps_flutter: ^2.5.1
   flutter_form_builder: ^9.1.1
   qr_flutter: ^4.1.0
+  url_launcher: ^6.2.4
 
 dev_dependencies:
   flutter_test:

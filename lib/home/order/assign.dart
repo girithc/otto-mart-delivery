@@ -287,14 +287,6 @@ class _OrderAssignedPageState extends State<OrderAssignedPage> {
                   pickupOrder().then((value) {
                     if (value != null) {
                       if (value.orderInfo != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Order is dispatched"),
-                            backgroundColor: Colors
-                                .green, // Optional: for a green background
-                          ),
-                        );
-
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(

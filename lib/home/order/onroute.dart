@@ -1,6 +1,8 @@
 import 'package:delivery/home/order/assign.dart';
+import 'package:delivery/home/order/complete.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class OnRoutePage extends StatefulWidget {
   OnRoutePage({super.key, required this.order});
@@ -22,17 +24,15 @@ class _OnRoutePageState extends State<OnRoutePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Delivery'),
-        centerTitle: true,
-      ),
-      body: Container(
-        color: Colors.white,
-        child: FormBuilder(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(16.0),
-            children: [
+        appBar: AppBar(
+          title: const Text('Delivery'),
+          centerTitle: true,
+        ),
+        body: Container(
+          color: Colors.white,
+          child: FormBuilder(
+            key: _formKey,
+            child: ListView(padding: const EdgeInsets.all(16.0), children: [
               FormBuilderTextField(
                 name: 'customername',
                 decoration: InputDecoration(
@@ -72,7 +72,7 @@ class _OnRoutePageState extends State<OnRoutePage> {
                 initialValue: widget.order.customerPhone,
                 validator: _requiredValidator,
               ),
-              SizedBox(height: 25),
+              const SizedBox(height: 25),
               FormBuilderTextField(
                 name: 'streetaddress',
                 decoration: InputDecoration(
@@ -148,7 +148,7 @@ class _OnRoutePageState extends State<OnRoutePage> {
                 initialValue: widget.order.orderStatus,
                 readOnly: true,
               ),
-              const SizedBox(height: 25),
+              const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -161,21 +161,39 @@ class _OnRoutePageState extends State<OnRoutePage> {
                             BorderRadius.circular(20.0), // Rounded borders
                       ),
                     ),
-                    onPressed: () {
-                      // Define what should happen when the button is pressed
+                    onPressed: () async {
+                      double latitude =
+                          widget.order.latitude; // Example latitude
+                      double longitude =
+                          widget.order.longitude; // Example longitude
+                      Uri googleMapsUri = Uri.parse(
+                          "https://www.google.com/maps/search/?api=1&query=$latitude,$longitude");
+
+                      if (await canLaunchUrl(googleMapsUri)) {
+                        await launchUrl(googleMapsUri);
+                      } else {
+                        throw 'Could not open the map.';
+                      }
                     },
-                    child: Text(
+                    child: const Text(
                       'Google Maps',
                       style: TextStyle(
-                          color: Colors.black, fontSize: 18 // Text color
-                          ),
+                        color: Colors.black, // Text color
+                        fontSize: 18,
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 25),
+              const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () async {},
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const CompleteDeliveryPage()),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromRGBO(98, 0, 238, 1),
                   padding:
@@ -192,10 +210,8 @@ class _OnRoutePageState extends State<OnRoutePage> {
                       fontWeight: FontWeight.bold),
                 ),
               ),
-            ],
+            ]),
           ),
-        ),
-      ),
-    );
+        ));
   }
 }
