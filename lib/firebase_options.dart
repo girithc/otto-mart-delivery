@@ -25,10 +25,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for windows - '
@@ -47,29 +44,38 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAGhiDKq0tON-N87s6Sk0nMzwNcoHG5mFU',
-    appId: '1:666337261439:web:7b2c9200536405b0f78c4a',
-    messagingSenderId: '666337261439',
-    projectId: 'hip-well-400702',
-    authDomain: 'hip-well-400702.firebaseapp.com',
-    storageBucket: 'hip-well-400702.appspot.com',
-    measurementId: 'G-SY0K4N4PPV',
+    apiKey: 'AIzaSyBk9wQmxeSLkjpIOrZqg4Uog43xDMDODrA',
+    appId: '1:710742246558:web:ddb0e70f5fe5f1647ce78f',
+    messagingSenderId: '710742246558',
+    projectId: 'seismic-ground-410711',
+    authDomain: 'seismic-ground-410711.firebaseapp.com',
+    storageBucket: 'seismic-ground-410711.appspot.com',
+    measurementId: 'G-WQ4KKCME8T',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDXHcfX2E1Kj3wHTWYQklS0GAZcWBlFwvY',
-    appId: '1:666337261439:android:a7428d1585328ad3f78c4a',
-    messagingSenderId: '666337261439',
-    projectId: 'hip-well-400702',
-    storageBucket: 'hip-well-400702.appspot.com',
+    apiKey: 'AIzaSyCYyFAaJ8LayV6v31aKionhtsw5vLMMu4A',
+    appId: '1:710742246558:android:1301c0c56e8a03ef7ce78f',
+    messagingSenderId: '710742246558',
+    projectId: 'seismic-ground-410711',
+    storageBucket: 'seismic-ground-410711.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCcJH7b0svTb2hFehJdmpTVP99atamuooc',
-    appId: '1:666337261439:ios:000c8a3c155bdd5bf78c4a',
-    messagingSenderId: '666337261439',
-    projectId: 'hip-well-400702',
-    storageBucket: 'hip-well-400702.appspot.com',
+    apiKey: 'AIzaSyADBoJaUlQJ03BkglRinwT9yYnNXDmyWOE',
+    appId: '1:710742246558:ios:8f8fe684321998b07ce78f',
+    messagingSenderId: '710742246558',
+    projectId: 'seismic-ground-410711',
+    storageBucket: 'seismic-ground-410711.appspot.com',
     iosBundleId: 'com.example.delivery',
+  );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyADBoJaUlQJ03BkglRinwT9yYnNXDmyWOE',
+    appId: '1:710742246558:ios:855b729bca40f7707ce78f',
+    messagingSenderId: '710742246558',
+    projectId: 'seismic-ground-410711',
+    storageBucket: 'seismic-ground-410711.appspot.com',
+    iosBundleId: 'com.example.delivery.RunnerTests',
   );
 }

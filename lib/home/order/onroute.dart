@@ -191,7 +191,10 @@ class _OnRoutePageState extends State<OnRoutePage> {
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => const CompleteDeliveryPage()),
+                        builder: (context) => CompleteDeliveryPage(
+                              customerPhone: widget.order.customerPhone,
+                              orderDate: widget.order.orderDate,
+                            )),
                   );
                 },
                 style: ElevatedButton.styleFrom(

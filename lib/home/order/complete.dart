@@ -1,9 +1,13 @@
 import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 class CompleteDeliveryPage extends StatefulWidget {
-  const CompleteDeliveryPage({super.key});
+  CompleteDeliveryPage(
+      {super.key, required this.customerPhone, required this.orderDate});
+  String customerPhone;
+  String orderDate;
 
   @override
   State<CompleteDeliveryPage> createState() => _CompleteDeliveryPageState();
@@ -24,10 +28,33 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
     }
   }
 
-  void _submitOrder() {
-    // Implement the submission logic here
-    // This could involve uploading the image to a server or saving it locally
-    print('Order submitted with image: ${_image?.path}');
+  Future<void> _submitOrder() async {
+    print('Submit Order');
+    if (_image == null) {
+      print('No image selected');
+      return;
+    }
+
+    final path =
+        'delivery-partner/sales-order/${widget.customerPhone}/${widget.orderDate}';
+
+    /*
+    final ref = FirebaseStorage.instance.ref().child(path);
+    print("Size ${_image!.path}");
+    try {
+      await ref.putFile(_image!);
+      print('Upload successful');
+    } catch (e) {
+      print('Upload failed: $e');
+    }
+    */
+    final storageRef = FirebaseStorage.instance.ref().child("files/uid");
+    try {
+      final listResult = await storageRef.listAll();
+    } on FirebaseException catch (e) {
+      // Caught an exception from Firebase.
+      print("Failed with error '${e.code}': ${e.message}");
+    }
   }
 
   @override
@@ -93,7 +120,50 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
             ),
             const SizedBox(height: 15),
             ElevatedButton(
-              onPressed: _submitOrder,
+              onPressed: () {
+                if (_image != null) {
+                  _submitOrder();
+                } else {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        backgroundColor: Colors.white,
+                        surfaceTintColor: Colors.white,
+                        elevation: 4.0,
+                        shape: const RoundedRectangleBorder(
+                          // Set the shape of the dialog
+                          borderRadius: BorderRadius.all(Radius.circular(8)),
+                        ),
+                        title: const Text("Take Picture"),
+                        content: const Center(
+                          child: Text('Please take picture'),
+                        ),
+                        actions: <Widget>[
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: const Color.fromRGBO(
+                                  98, 0, 238, 1), // Button text color
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text(
+                              'Close',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                }
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color.fromRGBO(98, 0, 238, 1),
                 padding:

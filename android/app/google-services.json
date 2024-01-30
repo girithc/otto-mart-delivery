@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "666337261439",
-    "project_id": "hip-well-400702",
-    "storage_bucket": "hip-well-400702.appspot.com"
+    "project_number": "710742246558",
+    "project_id": "seismic-ground-410711",
+    "storage_bucket": "seismic-ground-410711.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:666337261439:android:a7428d1585328ad3f78c4a",
+        "mobilesdk_app_id": "1:710742246558:android:1301c0c56e8a03ef7ce78f",
         "android_client_info": {
           "package_name": "com.example.delivery"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDXHcfX2E1Kj3wHTWYQklS0GAZcWBlFwvY"
+          "current_key": "AIzaSyCYyFAaJ8LayV6v31aKionhtsw5vLMMu4A"
         }
       ],
       "services": {
