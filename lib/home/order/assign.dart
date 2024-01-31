@@ -290,8 +290,10 @@ class _OrderAssignedPageState extends State<OrderAssignedPage> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                OnRoutePage(order: value.orderInfo!),
+                            builder: (context) => OnRoutePage(
+                              order: value.orderInfo!,
+                              orderId: widget.order.id,
+                            ),
                           ),
                         );
                       } else if (value.success == true) {

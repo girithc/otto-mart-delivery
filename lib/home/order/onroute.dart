@@ -5,8 +5,9 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class OnRoutePage extends StatefulWidget {
-  OnRoutePage({super.key, required this.order});
+  OnRoutePage({super.key, required this.order, required this.orderId});
   PickupOrderInfo order;
+  int orderId;
 
   @override
   State<OnRoutePage> createState() => _OnRoutePageState();
@@ -194,6 +195,7 @@ class _OnRoutePageState extends State<OnRoutePage> {
                         builder: (context) => CompleteDeliveryPage(
                               customerPhone: widget.order.customerPhone,
                               orderDate: widget.order.orderDate,
+                              orderId: widget.orderId,
                             )),
                   );
                 },

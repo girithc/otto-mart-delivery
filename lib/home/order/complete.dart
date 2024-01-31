@@ -1,13 +1,23 @@
+import 'dart:convert';
 import 'dart:io';
+import 'package:delivery/home/home.dart';
+import 'package:delivery/utils/constants.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 
 class CompleteDeliveryPage extends StatefulWidget {
-  CompleteDeliveryPage(
-      {super.key, required this.customerPhone, required this.orderDate});
-  String customerPhone;
-  String orderDate;
+  const CompleteDeliveryPage(
+      {super.key,
+      required this.customerPhone,
+      required this.orderDate,
+      required this.orderId});
+  final String customerPhone;
+  final String orderDate;
+  final int orderId;
 
   @override
   State<CompleteDeliveryPage> createState() => _CompleteDeliveryPageState();
@@ -15,6 +25,8 @@ class CompleteDeliveryPage extends StatefulWidget {
 
 class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
   File? _image;
+  UploadTask? uploadTask;
+  final _storage = const FlutterSecureStorage();
 
   Future<void> _takePicture() async {
     final ImagePicker picker = ImagePicker();
@@ -22,14 +34,33 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
         await picker.pickImage(source: ImageSource.camera);
 
     if (pickedFile != null) {
+      File? compressedFile = await _compressFile(File(pickedFile.path));
       setState(() {
-        _image = File(pickedFile.path);
+        _image = compressedFile;
       });
     }
   }
 
-  Future<void> _submitOrder() async {
+  Future<File?> _compressFile(File file) async {
+    final String targetPath = '${file.path}_compressed.jpg';
+    var result = await FlutterImageCompress.compressAndGetFile(
+      file.absolute.path, targetPath,
+      quality: 50, // Adjust the quality as needed
+      rotate: 0, // Adjust the rotation as needed
+    );
+
+    File resultImg = File(result!.path);
+
+    print('Original file size: ${file.lengthSync()}');
+    print('Compressed file size: ${resultImg.lengthSync()}');
+
+    return resultImg;
+  }
+
+  Future<void> submitOrder(BuildContext context) async {
     print('Submit Order');
+    final partnerPhone = await _storage.read(key: 'partnerId');
+
     if (_image == null) {
       print('No image selected');
       return;
@@ -37,24 +68,71 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
 
     final path =
         'delivery-partner/sales-order/${widget.customerPhone}/${widget.orderDate}';
-
     final ref = FirebaseStorage.instance.ref().child(path);
-    print("Size ${_image!.path}");
+
     try {
-      await ref.putFile(_image!);
-      print('Upload successful');
+      setState(() {
+        uploadTask = ref.putFile(_image!);
+      });
+      final snapshot = await uploadTask!.whenComplete(() => {});
+      final urlDownloaded = await snapshot.ref.getDownloadURL();
+      print('Downloaded Link: $urlDownloaded');
+      setState(() {
+        uploadTask = null;
+      });
+
+      // Constructing the request body
+      final body = json.encode({
+        'phone': partnerPhone,
+        'sales_order_id': widget.orderId,
+        'image': urlDownloaded,
+      });
+
+      // Sending the HTTP POST request
+      final response = await http.post(
+        Uri.parse('$baseUrl/delivery-partner-complete-order'),
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        final result = DeliveryCompletionResult.fromJson(responseData);
+
+        // Showing the dialog
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Order Completed'),
+              content: Column(
+                children: [
+                  Image.network(result.image),
+                  Text(
+                      'Order ID: ${result.salesOrderID}\nStatus: ${result.orderStatus}'),
+                ],
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('Next'),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog
+                    Navigator.of(context).pushReplacement(MaterialPageRoute(
+                        builder: (context) =>
+                            const HomePage())); // Navigate back to homepage
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      } else {
+        print(
+            'Failed to complete the order: ${response.statusCode} ${response.body}');
+      }
     } catch (e) {
-      print('Upload failed: $e');
+      print('Upload failed or request failed: $e');
     }
-    /*
-    final storageRef = FirebaseStorage.instance.ref().child("files/uid");
-    try {
-      final listResult = await storageRef.listAll();
-    } on FirebaseException catch (e) {
-      // Caught an exception from Firebase.
-      print("Failed with error '${e.code}': ${e.message}");
-    }
-    */
   }
 
   @override
@@ -65,7 +143,8 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
       ),
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             if (_image != null) // This adds margin around the container
               Container(
@@ -118,11 +197,12 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
                 ],
               ),
             ),
+            buildProgess(),
             const SizedBox(height: 15),
             ElevatedButton(
               onPressed: () {
                 if (_image != null) {
-                  _submitOrder();
+                  submitOrder(context);
                 } else {
                   showDialog(
                     context: context,
@@ -183,7 +263,7 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
                     width: 5,
                   ),
                   Text(
-                    'Submit Order',
+                    'Complete Order',
                     style: TextStyle(color: Colors.white, fontSize: 18),
                   ),
                 ],
@@ -192,6 +272,56 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget buildProgess() => StreamBuilder<TaskSnapshot>(
+      stream: uploadTask?.snapshotEvents,
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          final data = snapshot.data!;
+          double progress = data.bytesTransferred / data.totalBytes;
+          return SizedBox(
+            height: 50,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                LinearProgressIndicator(
+                  value: progress,
+                  backgroundColor: Colors.grey,
+                  color: Colors.green,
+                ),
+                Center(
+                  child: Text(
+                    '${(100 * progress).roundToDouble()}%',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          );
+        } else {
+          return const SizedBox(height: 10);
+        }
+      });
+}
+
+class DeliveryCompletionResult {
+  final int salesOrderID;
+  final String orderStatus;
+  final String image;
+
+  DeliveryCompletionResult(
+      {required this.salesOrderID,
+      required this.orderStatus,
+      required this.image});
+
+  // Factory constructor to create a DeliveryCompletionResult instance from a JSON map
+  factory DeliveryCompletionResult.fromJson(Map<String, dynamic> json) {
+    return DeliveryCompletionResult(
+      salesOrderID: json['sales_order_id'],
+      orderStatus: json['order_status'],
+      image: json['image'],
     );
   }
 }
