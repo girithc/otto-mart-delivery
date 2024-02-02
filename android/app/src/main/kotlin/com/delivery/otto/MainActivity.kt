@@ -1,4 +1,4 @@
-package com.example.delivery
+package com.delivery.otto
 
 import io.flutter.embedding.android.FlutterActivity
 
