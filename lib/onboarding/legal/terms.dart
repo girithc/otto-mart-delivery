@@ -1,4 +1,4 @@
-import 'package:delivery/onboarding/login/login.dart';
+import 'package:delivery/onboarding/login/phone.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -72,6 +72,7 @@ class _TermsState extends State<Terms> {
             ),
           ),
         ),
+        centerTitle: true,
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back,

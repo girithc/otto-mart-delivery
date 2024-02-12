@@ -1,16 +1,13 @@
 import 'dart:convert';
-import 'package:delivery/home/home.dart';
-import 'package:delivery/onboarding/details/details.dart';
+import 'dart:io';
 import 'package:delivery/onboarding/legal/privacy.dart';
 import 'package:delivery/onboarding/legal/terms.dart';
-import 'package:delivery/utils/constants.dart';
+import 'package:delivery/onboarding/login/verify.dart';
+import 'package:delivery/utils/network/service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:http/http.dart' as http;
 import 'package:pinput/pinput.dart';
-import 'package:tuple/tuple.dart';
+import 'package:upgrader/upgrader.dart';
 
-// Main widget for phone number verification
 class MyPhone extends StatefulWidget {
   const MyPhone({super.key});
 
@@ -32,61 +29,68 @@ class _MyPhoneState extends State<MyPhone> {
     super.initState();
   }
 
-  void _showSnackbar(String message, Color color) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(color: Colors.black),
-        ),
-        backgroundColor: color,
-      ),
+  void _showDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Message"),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              child: const Text("Close"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
-  // Create an instance of FlutterSecureStorage
-  final _storage = const FlutterSecureStorage();
+  Future<String?> sendOTP(String phoneNumber) async {
+    try {
+      final networkService = NetworkService();
+      // Send the HTTP request to send OTP
+      final Map<String, dynamic> requestData = {"phone": phoneNumber};
 
-  Future<Tuple2<bool, bool>> _handleLogin() async {
-    final phone = phoneNumberController.text;
-    final response = await http.post(
-      Uri.parse(
-          '$baseUrl/delivery-partner-login'), // Replace with your API endpoint
-      body: jsonEncode({'phone': phone}),
-      headers: {'Content-Type': 'application/json'},
-    );
+      final response = await networkService.postWithAuth('/send-otp-packer',
+          additionalData: requestData);
 
-    if (response.statusCode == 200) {
-      // Decode the JSON response
-      final responseData = jsonDecode(response.body);
-
-      // Check if the name field exists and store it
-      final String? name = responseData['name'];
+      print(response.statusCode);
       print(response.body);
-      if (name != null && name.isNotEmpty) {
-        _showSnackbar('Name: $name', Colors.green);
-
-        // Store the phone number in Flutter Secure Storage as partnerId
-        await _storage.write(key: 'partnerId', value: phone);
-        await _storage.write(key: 'name', value: name);
-
-        return const Tuple2(true, true);
+      if (response.statusCode == 200) {
+        Map<String, dynamic> jsonResponse = json.decode(response.body);
+        return jsonResponse['type'];
       } else {
-        _showSnackbar('Name empty', Colors.amberAccent);
-        return const Tuple2(false, true);
+        // Handle HTTP request error
+        return response.reasonPhrase;
       }
-    } else {
-      _showSnackbar('Login Failed', Colors.purpleAccent);
-      print(response.body);
-      return const Tuple2(false, false);
+    } catch (error) {
+      print('Error(Send OTP): $error');
+      return null;
     }
+  }
+
+  void _showSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        key: _scaffoldKey,
-        body: Form(
+      key: _scaffoldKey,
+      body: UpgradeAlert(
+        dialogStyle: Platform.isIOS
+            ? UpgradeDialogStyle.cupertino
+            : UpgradeDialogStyle.material,
+        canDismissDialog: false,
+        showIgnore: false,
+        showLater: false,
+        child: Form(
           key: formKey,
           child: Container(
             color: Colors.white,
@@ -99,19 +103,33 @@ class _MyPhoneState extends State<MyPhone> {
                   Image.asset(
                     'assets/icon/icon.jpeg',
                     height: 250,
+                    errorBuilder: (BuildContext context, Object exception,
+                        StackTrace? stackTrace) {
+                      return Container(
+                        height: 250,
+                        color: Colors.grey[200],
+                        alignment: Alignment.center,
+                        child: const Center(
+                          child: Text(
+                            'no image',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(
+                    height: 25,
                   ),
                   const Text(
-                    "Delivery Partner",
-                    style: TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                        color: Color.fromARGB(255, 20, 2, 79)),
+                    "Phone Verification",
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(
                     height: 10,
                   ),
                   const Text(
-                    "Phone Verification",
+                    "Let's Start Saving!",
                     style: TextStyle(
                       fontSize: 16,
                     ),
@@ -121,7 +139,7 @@ class _MyPhoneState extends State<MyPhone> {
                     height: 30,
                   ),
                   SizedBox(
-                    height: 80, // Increased height for larger input boxes
+                    height: 80, // Increased height for a larger input area
                     child: Pinput(
                       separatorBuilder: (index) => Container(
                         height: 80,
@@ -214,29 +232,40 @@ class _MyPhoneState extends State<MyPhone> {
                         ),
                       ),
                       onPressed: () {
-                        _handleLogin().then((value) => {
-                              if (value.item1)
-                                {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const HomePage(),
-                                    ),
-                                  )
-                                }
-                              else if (value.item2)
-                                {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const DetailsPage(),
-                                    ),
-                                  )
-                                }
-                            });
+                        String phoneNumber = phoneNumberController.text;
+                        if (phoneNumber.length == 10) {
+                          sendOTP(phoneNumber).then((value) {
+                            if (value == "success") {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => MyVerify(
+                                    number: phoneNumber,
+                                    isTester: false,
+                                  ),
+                                ),
+                              );
+                            } else if (value == "test") {
+                              print("TEST");
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const MyVerify(
+                                    number: '1234567890',
+                                    isTester: true,
+                                  ),
+                                ),
+                              );
+                            } else {
+                              _showDialog(value ?? 'Failed to send OTP');
+                            }
+                          });
+                        } else {
+                          _showDialog("Phone number must be 10 digits");
+                        }
                       },
                       child: const Text(
-                        "Login",
+                        "Send OTP code",
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -250,40 +279,42 @@ class _MyPhoneState extends State<MyPhone> {
             ),
           ),
         ),
-        bottomNavigationBar: BottomAppBar(
-          color: Colors.white,
-          surfaceTintColor: Colors.white,
-          elevation: 0.0,
-          child: SizedBox(
-            height: 40,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                TextButton(
+      ),
+      bottomNavigationBar: BottomAppBar(
+        color: Colors.white,
+        surfaceTintColor: Colors.white,
+        elevation: 0.0,
+        child: SizedBox(
+          height: 40,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              Expanded(
+                child: TextButton(
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => const Terms(),
-                      ),
+                      MaterialPageRoute(builder: (context) => const Terms()),
                     );
                   },
-                  child: const Text('Terms and Conditions'),
+                  child: const Text('Terms'),
                 ),
-                TextButton(
+              ),
+              Expanded(
+                child: TextButton(
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => const Privacy(),
-                      ),
+                      MaterialPageRoute(builder: (context) => const Privacy()),
                     );
                   },
-                  child: const Text('Privacy Policy'),
+                  child: const Text('Privacy'),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ));
+        ),
+      ),
+    );
   }
 }
