@@ -55,7 +55,8 @@ class _MyPhoneState extends State<MyPhone> {
       // Send the HTTP request to send OTP
       final Map<String, dynamic> requestData = {"phone": phoneNumber};
 
-      final response = await networkService.postWithAuth('/send-otp-packer',
+      final response = await networkService.postWithAuth(
+          '/send-otp-delivery-partner',
           additionalData: requestData);
 
       print(response.statusCode);

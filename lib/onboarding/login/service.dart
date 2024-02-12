@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:delivery/utils/network/service.dart'; // Adjusted import for delivery context
@@ -8,8 +10,22 @@ class LoginProvider with ChangeNotifier {
   final FlutterSecureStorage storage = const FlutterSecureStorage();
 
   Future<bool> checkLogin() async {
+    print("Checking login");
     String? phone = await storage.read(key: "phone");
-    String exists = await checkDeliveryExists(phone!); // Adjusted method name
+
+    FirebaseMessaging.instance.requestPermission();
+
+    if (Platform.isIOS) {
+      var iosToken = await FirebaseMessaging.instance.getAPNSToken();
+      print("aps : $iosToken");
+    }
+    FirebaseMessaging firebaseMessage = FirebaseMessaging.instance;
+    String? deviceToken = await firebaseMessage.getToken();
+
+    await storage.write(key: 'fcm', value: deviceToken);
+
+    String exists =
+        await checkDeliveryExists(phone!, deviceToken!); // Adjusted method name
     if (exists.length == 10) {
       // Assuming the 'exists' logic remains the same
       return true;
@@ -18,14 +34,17 @@ class LoginProvider with ChangeNotifier {
     return false;
   }
 
-  Future<String> checkDeliveryExists(String phoneNumber) async {
+  Future<String> checkDeliveryExists(String phoneNumber, String fcm) async {
     // Adjusted method name
     try {
-      final Map<String, dynamic> requestData = {"phone": phoneNumber};
+      final Map<String, dynamic> requestData = {
+        "phone": phoneNumber,
+        "fcm": fcm
+      };
 
       final networkService = NetworkService();
       var response = await networkService.postWithAuth(
-          '/login-delivery', // Adjusted endpoint
+          '/delivery-partner-login', // Adjusted endpoint
           additionalData: requestData);
       // Send the POST request
 

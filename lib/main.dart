@@ -5,7 +5,8 @@ import 'package:delivery/onboarding/login/service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
-import 'package:delivery/onboarding/login/phone.dart'; // Import your Phone/Login page here
+import 'package:delivery/onboarding/login/phone.dart';
+import 'package:provider/provider.dart'; // Import your Phone/Login page here
 
 final navigatorKey = GlobalKey<NavigatorState>();
 void main() async {

@@ -21,7 +21,7 @@ class MyVerify extends StatefulWidget {
 }
 
 class _MyVerifyState extends State<MyVerify> {
-  Delivery? packer;
+  Delivery? delivery;
 
   final storage = const FlutterSecureStorage();
   String? fcmToken;
@@ -112,16 +112,19 @@ class _MyVerifyState extends State<MyVerify> {
       String phoneNumber, String otp) async {
     try {
       //final fcm = await storage.read(key: 'fcm');
+      fcmToken = await storage.read(key: 'fcm');
       final Map<String, dynamic> requestData = {
         "phone": phoneNumber,
         "otp": int.parse(otp),
-        "fcm": fcmToken ?? ""
+        "fcm": fcmToken
       };
 
       final networkService = NetworkService();
       final response = await networkService.postWithAuth(
           '/verify-otp-delivery-partner',
           additionalData: requestData);
+
+      print("Respone code: ${response.statusCode} ${response.body}");
 
       if (response.statusCode == 200) {
         print(response.statusCode);
@@ -133,7 +136,7 @@ class _MyVerifyState extends State<MyVerify> {
         await storage.write(
             key: 'authToken', value: deliveryLoginResponse.delivery?.token);
         await storage.write(
-            key: 'packerId',
+            key: 'deliveryPartnerId',
             value: deliveryLoginResponse.delivery?.id.toString());
         await storage.write(
             key: 'phone', value: deliveryLoginResponse.delivery?.phone);
@@ -404,7 +407,7 @@ class Logger {}
 class DeliveryLoginResponse {
   final String message;
   final String type;
-  DeliveryLogin? delivery; // Renamed from packer to delivery
+  DeliveryLogin? delivery;
 
   DeliveryLoginResponse({
     required this.message,
