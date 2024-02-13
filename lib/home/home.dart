@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:delivery/home/order/assign.dart';
+import 'package:delivery/home/order/complete.dart';
 import 'package:delivery/onboarding/login/phone.dart';
 import 'package:delivery/utils/constants.dart';
 import 'package:delivery/utils/network/service.dart';
@@ -86,6 +87,7 @@ class _HomePageState extends State<HomePage> {
           '/delivery-partner-accept-order', // Adjusted endpoint
           additionalData: requestData);
 
+      print("Response: ${response.body}");
       if (response.statusCode == 200) {
         final OrderAcceptedDP order =
             OrderAcceptedDP.fromJson(json.decode(response.body));
@@ -167,65 +169,56 @@ class _HomePageState extends State<HomePage> {
             orderAssigned != null
                 ? buildOrderAssignedWidget()
                 : buildNoOrderWidget(context),
-            const SizedBox(height: 10),
-            GestureDetector(
-              onTap: () {},
-              child: Container(
-                height: MediaQuery.of(context).size.height * 0.1,
-                width: MediaQuery.of(context).size.width * 0.85,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15), // Rounded borders
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.25), // Shadow color
-                      spreadRadius: 0,
-                      blurRadius: 20, // Increased shadow blur
-                      offset: const Offset(0, 10), // Increased vertical offset
-                    ),
-                  ],
-                ),
-                child: const Center(
-                  child: Text(
-                    'Delivery History',
-                    style: TextStyle(
-                        fontSize: 25,
-                        color: Colors.black54,
-                        fontWeight: FontWeight.normal),
+            const SizedBox(height: 15),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 10),
+              height: MediaQuery.of(context).size.height * 0.18,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GestureDetector(
+                    onTap: () {},
+                    child: buildSlideableWidget(context, 'History'),
                   ),
-                ),
+                  GestureDetector(
+                    onTap: () {},
+                    child: buildSlideableWidget(context, 'Earnings'),
+                  ),
+                  // Add more GestureDetector widgets here as needed
+                ],
               ),
             ),
             const SizedBox(height: 10),
-            GestureDetector(
-              onTap: () {},
-              child: Container(
-                height: MediaQuery.of(context).size.height * 0.1,
-                width: MediaQuery.of(context).size.width * 0.85,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15), // Rounded borders
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.25), // Shadow color
-                      spreadRadius: 0,
-                      blurRadius: 20, // Increased shadow blur
-                      offset: const Offset(0, 10), // Increased vertical offset
-                    ),
-                  ],
-                ),
-                child: const Center(
-                  child: Text(
-                    'Earnings',
-                    style: TextStyle(
-                        fontSize: 25,
-                        color: Colors.black54,
-                        fontWeight: FontWeight.normal),
-                  ),
-                ),
-              ),
-            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildSlideableWidget(BuildContext context, String title) {
+    return Container(
+      width: MediaQuery.of(context).size.width * 0.4,
+      margin: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.25),
+            spreadRadius: 0,
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 25,
+            color: Colors.black54,
+            fontWeight: FontWeight.normal,
+          ),
         ),
       ),
     );
@@ -327,7 +320,17 @@ class _HomePageState extends State<HomePage> {
             ElevatedButton(
               onPressed: () {
                 acceptOrder().then((value) {
-                  if (value != null) {
+                  if (value?.orderStatus == "arrived") {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => CompleteDeliveryPage(
+                          orderDate: value!.orderDate.toString(),
+                          orderId: value.id,
+                          customerPhone: value.customerPhone,
+                        ),
+                      ),
+                    );
+                  } else if (value != null) {
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => OrderAssignedPage(order: value),
@@ -417,28 +420,29 @@ class OrderAcceptedDP {
   final DateTime orderDate;
   final String orderStatus;
   final String deliveryPartnerStatus;
+  final String customerPhone;
 
-  OrderAcceptedDP({
-    required this.id,
-    required this.deliveryPartnerId,
-    required this.storeId,
-    required this.storeName,
-    required this.storeAddress,
-    required this.orderDate,
-    required this.orderStatus,
-    required this.deliveryPartnerStatus,
-  });
+  OrderAcceptedDP(
+      {required this.id,
+      required this.deliveryPartnerId,
+      required this.storeId,
+      required this.storeName,
+      required this.storeAddress,
+      required this.orderDate,
+      required this.orderStatus,
+      required this.deliveryPartnerStatus,
+      required this.customerPhone});
 
   factory OrderAcceptedDP.fromJson(Map<String, dynamic> json) {
     return OrderAcceptedDP(
-      id: json['id'],
-      deliveryPartnerId: json['delivery_partner_id'],
-      storeId: json['store_id'],
-      storeName: json['store_name'],
-      storeAddress: json['store_address'],
-      orderDate: DateTime.parse(json['order_date']),
-      orderStatus: json['order_status'],
-      deliveryPartnerStatus: json['order_dp_status'],
-    );
+        id: json['id'],
+        deliveryPartnerId: json['delivery_partner_id'],
+        storeId: json['store_id'],
+        storeName: json['store_name'],
+        storeAddress: json['store_address'],
+        orderDate: DateTime.parse(json['order_date']),
+        orderStatus: json['order_status'],
+        deliveryPartnerStatus: json['order_dp_status'],
+        customerPhone: json['customer_phone']);
   }
 }

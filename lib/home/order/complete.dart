@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:delivery/home/home.dart';
 import 'package:delivery/utils/constants.dart';
+import 'package:delivery/utils/network/service.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -59,7 +60,7 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
 
   Future<void> submitOrder(BuildContext context) async {
     print('Submit Order');
-    final partnerPhone = await _storage.read(key: 'partnerId');
+    final partnerPhone = await _storage.read(key: 'phone');
 
     if (_image == null) {
       print('No image selected');
@@ -82,18 +83,17 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
       });
 
       // Constructing the request body
-      final body = json.encode({
+      final body = {
         'phone': partnerPhone,
         'sales_order_id': widget.orderId,
         'image': urlDownloaded,
-      });
+      };
 
-      // Sending the HTTP POST request
-      final response = await http.post(
-        Uri.parse('$baseUrl/delivery-partner-complete-order'),
-        headers: {'Content-Type': 'application/json'},
-        body: body,
-      );
+      final networkService = NetworkService();
+
+      final response = await networkService.postWithAuth(
+          '/delivery-partner-complete-order',
+          additionalData: body);
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);

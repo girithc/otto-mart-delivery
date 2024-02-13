@@ -71,7 +71,7 @@ class _OrderAssignedPageState extends State<OrderAssignedPage> {
   }
 
   void _showQRCodeDialog(BuildContext context) async {
-    final String? phone = await _storage.read(key: 'partnerId');
+    final String? phone = await _storage.read(key: 'phone');
 
     // Ensure phone is not null, otherwise, use a default value or handle the error
     final String phoneValue = phone ?? 'Unknown';
