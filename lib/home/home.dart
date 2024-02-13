@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:delivery/home/order/assign.dart';
 import 'package:delivery/onboarding/login/phone.dart';
 import 'package:delivery/utils/constants.dart';
+import 'package:delivery/utils/network/service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
@@ -24,6 +25,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _loadName();
+    checkForOrders();
   }
 
   Future<void> _clearSecureStorage() async {
@@ -73,17 +75,16 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<OrderAcceptedDP?> acceptOrder() async {
-    final Uri url = Uri.parse('$baseUrl/delivery-partner-accept-order');
-
-    String? phone = await _storage.read(key: 'partnerId');
+    String? phone = await _storage.read(key: 'phone');
+    Map<String, dynamic> requestData = {
+      'phone': phone,
+      'sales_order_id': orderAssigned?.id
+    };
     try {
-      final response = await http.post(
-        url,
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode({'phone': phone, 'sales_order_id': orderAssigned?.id}),
-      );
+      final networkService = NetworkService();
+      final response = await networkService.postWithAuth(
+          '/delivery-partner-accept-order', // Adjusted endpoint
+          additionalData: requestData);
 
       if (response.statusCode == 200) {
         final OrderAcceptedDP order =

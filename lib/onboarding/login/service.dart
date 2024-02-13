@@ -12,23 +12,45 @@ class LoginProvider with ChangeNotifier {
   Future<bool> checkLogin() async {
     print("Checking login");
     String? phone = await storage.read(key: "phone");
+    String? fcm = await storage.read(key: "fcm");
 
-    FirebaseMessaging.instance.requestPermission();
+    try {
+      final Map<String, dynamic> requestData = {"phone": phone, "fcm": fcm};
 
-    if (Platform.isIOS) {
-      var iosToken = await FirebaseMessaging.instance.getAPNSToken();
-      print("aps : $iosToken");
-    }
-    FirebaseMessaging firebaseMessage = FirebaseMessaging.instance;
-    String? deviceToken = await firebaseMessage.getToken();
+      final networkService = NetworkService();
+      var response = await networkService.postWithAuth(
+          '/delivery-partner-login', // Adjusted endpoint
+          additionalData: requestData);
+      // Send the POST request
 
-    await storage.write(key: 'fcm', value: deviceToken);
+      if (response.statusCode == 200) {
+        var data = json.decode(response.body);
+        // Assuming the API returns a JSON object with a field that indicates if the delivery exists
+        final Delivery delivery =
+            Delivery.fromJson(data); // Adjusted to Delivery
+        print("Delivery: ${delivery.id} ${delivery.phone}");
+        await storage.write(
+            key: 'deliveryId', value: delivery.id.toString()); // Adjusted key
+        await storage.write(key: 'phone', value: delivery.phone);
+        await storage.write(key: 'name', value: delivery.name);
+        await storage.write(
+            key: 'authToken',
+            value: delivery.token); // Assuming similar fields for delivery
 
-    String exists =
-        await checkDeliveryExists(phone!, deviceToken!); // Adjusted method name
-    if (exists.length == 10) {
-      // Assuming the 'exists' logic remains the same
-      return true;
+        if (data['phone'].length == 10) {
+          // Assuming the 'exists' logic remains the same
+          return true;
+        }
+        return false;
+      } else {
+        // Handle non-200 responses
+        print('Server error: ${response.statusCode}');
+        print(response.body);
+        return false;
+      }
+    } catch (e) {
+      print('Error occurred: $e');
+      return false;
     }
 
     return false;

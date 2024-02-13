@@ -12,8 +12,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:pinput/pinput.dart';
 
 class MyVerify extends StatefulWidget {
-  const MyVerify({Key? key, required this.number, required this.isTester})
-      : super(key: key);
+  const MyVerify({super.key, required this.number, required this.isTester});
   final String number; // Mark this as final
   final bool isTester;
   @override
@@ -419,8 +418,8 @@ class DeliveryLoginResponse {
     return DeliveryLoginResponse(
       message: json['message'],
       type: json['type'],
-      delivery: json['Delivery'] != null
-          ? DeliveryLogin.fromJson(json['Delivery'])
+      delivery: json['DeliveryPartner'] != null
+          ? DeliveryLogin.fromJson(json['DeliveryPartner'])
           : null, // Conditionally parse DeliveryLogin if available
     );
   }

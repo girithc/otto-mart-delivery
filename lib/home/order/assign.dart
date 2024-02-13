@@ -2,12 +2,11 @@ import 'dart:convert';
 
 import 'package:delivery/home/home.dart';
 import 'package:delivery/home/order/onroute.dart';
-import 'package:delivery/utils/constants.dart';
+import 'package:delivery/utils/network/service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:http/http.dart' as http;
 
 class OrderAssignedPage extends StatefulWidget {
   OrderAssignedPage({required this.order, super.key});
@@ -31,18 +30,21 @@ class _OrderAssignedPageState extends State<OrderAssignedPage> {
   }
 
   Future<PickupOrderResult?> pickupOrder() async {
-    final Uri url = Uri.parse('$baseUrl/delivery-partner-pickup-order');
+    String? phone = await _storage.read(key: 'phone');
+    Map<String, dynamic> data = {
+      'phone': phone,
+      'sales_order_id': widget.order.id,
+    };
 
-    String? phone = await _storage.read(key: 'partnerId');
     try {
-      final response = await http.post(
-        url,
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode({'phone': phone, 'sales_order_id': widget.order.id}),
+      final networkService = NetworkService();
+      final response = await networkService.postWithAuth(
+        '/delivery-partner-pickup-order',
+        additionalData: data,
       );
-      print("phone $phone, order id ${widget.order.id}");
+
+      print("response ${response.body}");
+      print("response: ${response.statusCode}");
 
       if (response.statusCode == 200) {
         print("Sucess: ${response.body}");
@@ -66,7 +68,6 @@ class _OrderAssignedPageState extends State<OrderAssignedPage> {
       // Handle network errors, parsing errors, etc
       throw Exception('Error accepting order: $e');
     }
-    return null;
   }
 
   void _showQRCodeDialog(BuildContext context) async {
@@ -285,6 +286,7 @@ class _OrderAssignedPageState extends State<OrderAssignedPage> {
               ElevatedButton(
                 onPressed: () async {
                   pickupOrder().then((value) {
+                    print("Value $value ");
                     if (value != null) {
                       if (value.orderInfo != null) {
                         Navigator.pushReplacement(
