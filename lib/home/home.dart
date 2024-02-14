@@ -3,12 +3,14 @@ import 'dart:convert';
 
 import 'package:delivery/home/order/assign.dart';
 import 'package:delivery/home/order/complete.dart';
+import 'package:delivery/home/order/onroute.dart';
 import 'package:delivery/onboarding/login/phone.dart';
 import 'package:delivery/utils/network/service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,8 +21,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   OrderAssigned? orderAssigned;
+  OrderAcceptedDP? orderAccepted;
+
   bool isCheckingOrders = false;
+  bool shouldShowAppBar = true;
   String greetingName = "Partner"; // Default greeting name
+  final _formKey = GlobalKey<FormBuilderState>();
   final navigation = ["Home", "Accept", "Pickup", "OnRoute", "Complete"];
   var currentState = "Home";
 
@@ -85,6 +91,7 @@ class _HomePageState extends State<HomePage> {
         orderAssigned = OrderAssigned.fromJson(jsonDecode(response.body));
         isCheckingOrders = false;
         currentState = "Accept";
+        shouldShowAppBar = false;
       });
       startTimer();
     } else {
@@ -124,6 +131,122 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<PickupOrderResult?> pickupOrder() async {
+    String? phone = await _storage.read(key: 'phone');
+    Map<String, dynamic> data = {
+      'phone': phone,
+      'sales_order_id': orderAccepted?.id,
+    };
+
+    try {
+      final networkService = NetworkService();
+      final response = await networkService.postWithAuth(
+        '/delivery-partner-pickup-order',
+        additionalData: data,
+      );
+
+      print("response ${response.body}");
+      print("response: ${response.statusCode}");
+
+      if (response.statusCode == 200) {
+        print("Sucess: ${response.body}");
+        return PickupOrderResult(
+            orderInfo: PickupOrderInfo.fromJson(json.decode(response.body)),
+            success: true);
+      } else if (response.statusCode == 304) {
+        // Return null for status code 304
+        print(response.body);
+        return PickupOrderResult(orderInfo: null, success: true);
+      } else if (response.statusCode == 423 || response.statusCode == 500) {
+        return PickupOrderResult(orderInfo: null, success: false);
+      } else {
+        print(response.body);
+
+        // Handle other non-200 responses
+        throw Exception(
+            'Failed to accept order. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      // Handle network errors, parsing errors, etc
+      throw Exception('Error accepting order: $e');
+    }
+  }
+
+  void _showQRCodeDialog(BuildContext context) async {
+    final String? phone = await _storage.read(key: 'phone');
+
+    // Ensure phone is not null, otherwise, use a default value or handle the error
+    final String phoneValue = phone ?? 'Unknown';
+
+    // Use the phoneValue in your data string
+    final String data = "$phoneValue-${orderAccepted?.id}";
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          elevation: 4.0,
+          shape: const RoundedRectangleBorder(
+            // Set the shape of the dialog
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+          ),
+          title: const Text("Order QR Code"),
+          content: SizedBox(
+            height: 300,
+            width: 300,
+            child: QrImageView(
+              data: data,
+              version: QrVersions.auto,
+              size: 300.0,
+              gapless: false,
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor:
+                    const Color.fromRGBO(98, 0, 238, 1), // Button text color
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Close',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showOrderNotPackedDialog(BuildContext context, String data) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Error"),
+          content: Text(data),
+          actions: <Widget>[
+            TextButton(
+              child: const Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void startTimer() {
     Timer.periodic(const Duration(seconds: 1), (timer) {
       if (duration.inSeconds == 0) {
@@ -137,40 +260,23 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  String? _requiredValidator(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'This field is required.';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-          toolbarHeight: MediaQuery.of(context).size.height * 0.07,
-          title: Text(
-            'Hi $greetingName',
-            style: const TextStyle(fontSize: 25, color: Colors.black),
-          ),
-          centerTitle: true,
-          leading: Container(
-            height: 30.0, // Set height of the container
-            width: 30.0, // Set width of the container
-            margin: const EdgeInsets.only(left: 10),
-            decoration: const BoxDecoration(
-              // Background color of the container
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-                colors: [Colors.black45, Colors.black87], // Gradient colors
-              ), // Circular shape
-            ),
-            child: IconButton(
-                icon: const Icon(Icons.person),
-                color: Colors.white, // Icon color
-                onPressed: () async {
-                  await _clearSecureStorage();
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => const MyPhone()),
-                    (Route<dynamic> route) => false,
-                  );
-                }),
-          )),
+      appBar: shouldShowAppBar
+          ? PreferredSize(
+              preferredSize:
+                  Size.fromHeight(MediaQuery.of(context).size.height * 0.07),
+              child: buildAppBar(),
+            )
+          : null,
       body: GoogleMap(
         mapType: MapType.normal,
         initialCameraPosition: _kGooglePlex,
@@ -182,15 +288,60 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget buildAppBar() {
+    switch (currentState) {
+      case "Accept":
+        return Container();
+      case "Pickup":
+        return Container();
+      default:
+        return defaultAppBar();
+    }
+  }
+
+  Widget defaultAppBar() {
+    return AppBar(
+        toolbarHeight: MediaQuery.of(context).size.height * 0.07,
+        title: Text(
+          'Hi $greetingName',
+          style: const TextStyle(fontSize: 25, color: Colors.black),
+        ),
+        centerTitle: true,
+        leading: Container(
+          height: 30.0, // Set height of the container
+          width: 30.0, // Set width of the container
+          margin: const EdgeInsets.only(left: 10),
+          decoration: const BoxDecoration(
+            // Background color of the container
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [Colors.black45, Colors.black87], // Gradient colors
+            ), // Circular shape
+          ),
+          child: IconButton(
+              icon: const Icon(Icons.person),
+              color: Colors.white, // Icon color
+              onPressed: () async {
+                await _clearSecureStorage();
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const MyPhone()),
+                  (Route<dynamic> route) => false,
+                );
+              }),
+        ));
+  }
+
   Widget buildBottomNavigationBar() {
     // Determine which widget to return based on the currentState
     switch (currentState) {
       case "Pickup":
         return buildPickup();
       case "OnRoute":
-        //return buildOnRoute();
+      //return buildOnRoute();
       case "Complete":
-        //return buildComplete();
+      //return buildComplete();
       default:
         return buildDefaultBottomBar(); // Fallback for any undefined state
     }
@@ -198,181 +349,200 @@ class _HomePageState extends State<HomePage> {
 
   Widget buildPickup() {
     return Container(
-        color: Colors.white,
-        child: FormBuilder(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(16.0),
-            children: [
-              FormBuilderTextField(
-                name: 'orderno',
-                decoration: InputDecoration(
-                  labelText: 'Order No.',
-                  hintText: 'Order No.',
-                  filled: true, // Enable filling of the input
-                  fillColor: Colors
-                      .grey[200], // Set light grey color as the background
-                  border: OutlineInputBorder(
-                    // Define the border
-                    borderRadius:
-                        BorderRadius.circular(10.0), // Circular rounded border
-                    borderSide: BorderSide.none, // No border side
-                  ),
+      alignment: Alignment.bottomCenter,
+      color: Colors.white,
+      height: MediaQuery.of(context).size.height * 0.45,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                InkWell(
+                  child: Icon(Icons.arrow_back_rounded),
                 ),
-                initialValue: widget.order.id.toString(),
-                validator: _requiredValidator,
-                readOnly: true,
-              ),
-              const SizedBox(height: 25),
-              FormBuilderTextField(
-                name: 'storename',
-                decoration: InputDecoration(
-                  labelText: 'Store Name',
-                  hintText: 'Store Name',
-                  filled: true, // Enable filling of the input
-                  fillColor: Colors
-                      .grey[200], // Set light grey color as the background
-                  border: OutlineInputBorder(
-                    // Define the border
-                    borderRadius:
-                        BorderRadius.circular(10.0), // Circular rounded border
-                    borderSide: BorderSide.none, // No border side
-                  ),
+                SizedBox(
+                  width: 5,
                 ),
-                readOnly: true,
-                initialValue: widget.order.storeName,
-                validator: _requiredValidator,
-              ),
-              const SizedBox(height: 25),
-              FormBuilderTextField(
-                name: 'storeaddress',
-                decoration: InputDecoration(
-                  labelText: 'Store Address',
-                  hintText: 'Store Address',
-                  filled: true, // Enable filling of the input
-                  fillColor: Colors
-                      .grey[200], // Set light grey color as the background
-                  border: OutlineInputBorder(
-                    // Define the border
-                    borderRadius:
-                        BorderRadius.circular(10.0), // Circular rounded border
-                    borderSide: BorderSide.none, // No border side
-                  ),
-                ),
-                initialValue: widget.order.storeAddress,
-                readOnly: true,
-              ),
-              const SizedBox(height: 25),
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: FormBuilderTextField(
-                      name: 'orderdatetime',
-                      decoration: InputDecoration(
-                        labelText: 'Order DateTime',
-                        hintText: 'Order DateTime',
-                        filled: true, // Enable filling of the input
-                        fillColor: Colors.grey[
-                            200], // Set light grey color as the background
-                        border: OutlineInputBorder(
-                          // Define the border
-                          borderRadius: BorderRadius.circular(
-                              10.0), // Circular rounded border
-                          borderSide: BorderSide.none, // No border side
+                Text(
+                  "back",
+                  style: TextStyle(fontSize: 18),
+                )
+              ],
+            ),
+          ),
+          FormBuilder(
+            key: _formKey,
+            child: Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(16.0),
+                children: [
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: FormBuilderTextField(
+                          name: 'orderno',
+                          decoration: InputDecoration(
+                            labelText: 'Order No.',
+                            hintText: 'Order No.',
+                            filled: true, // Enable filling of the input
+                            fillColor: Colors.grey[
+                                200], // Set light grey color as the background
+                            border: OutlineInputBorder(
+                              // Define the border
+                              borderRadius: BorderRadius.circular(
+                                  10.0), // Circular rounded border
+                              borderSide: BorderSide.none, // No border side
+                            ),
+                          ),
+                          initialValue: orderAccepted?.id.toString(),
+                          validator: _requiredValidator,
+                          readOnly: true,
                         ),
                       ),
-                      initialValue: widget.order.orderDate.toIso8601String(),
-                      readOnly: true,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: FormBuilderTextField(
+                          name: 'storename',
+                          decoration: InputDecoration(
+                            labelText: 'Store Name',
+                            hintText: 'Store Name',
+                            filled: true, // Enable filling of the input
+                            fillColor: Colors.grey[
+                                200], // Set light grey color as the background
+                            border: OutlineInputBorder(
+                              // Define the border
+                              borderRadius: BorderRadius.circular(
+                                  10.0), // Circular rounded border
+                              borderSide: BorderSide.none, // No border side
+                            ),
+                          ),
+                          readOnly: true,
+                          initialValue: orderAccepted?.storeName,
+                          validator: _requiredValidator,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  FormBuilderTextField(
+                    name: 'storeaddress',
+                    decoration: InputDecoration(
+                      labelText: 'Store Address',
+                      hintText: 'Store Address',
+                      filled: true, // Enable filling of the input
+                      fillColor: Colors
+                          .grey[200], // Set light grey color as the background
+                      border: OutlineInputBorder(
+                        // Define the border
+                        borderRadius: BorderRadius.circular(
+                            10.0), // Circular rounded border
+                        borderSide: BorderSide.none, // No border side
+                      ),
                     ),
+                    initialValue: orderAccepted?.storeAddress,
+                    readOnly: true,
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: FormBuilderTextField(
-                      name: 'orderstatus',
-                      decoration: InputDecoration(
-                        labelText: 'Order Status',
-                        hintText: 'Order Status',
-                        filled: true, // Enable filling of the input
-                        fillColor: Colors.grey[
-                            200], // Set light grey color as the background
-                        border: OutlineInputBorder(
-                          // Define the border
-                          borderRadius: BorderRadius.circular(
-                              10.0), // Circular rounded border
-                          borderSide: BorderSide.none, // No border side
+                  const SizedBox(height: 10),
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: FormBuilderTextField(
+                          name: 'orderdatetime',
+                          decoration: InputDecoration(
+                            labelText: 'Order DateTime',
+                            hintText: 'Order DateTime',
+                            filled: true, // Enable filling of the input
+                            fillColor: Colors.grey[
+                                200], // Set light grey color as the background
+                            border: OutlineInputBorder(
+                              // Define the border
+                              borderRadius: BorderRadius.circular(
+                                  10.0), // Circular rounded border
+                              borderSide: BorderSide.none, // No border side
+                            ),
+                          ),
+                          initialValue:
+                              orderAccepted?.orderDate.toIso8601String(),
+                          readOnly: true,
                         ),
                       ),
-                      initialValue: widget.order.orderStatus,
-                      readOnly: true,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: FormBuilderTextField(
+                          name: 'orderstatus',
+                          decoration: InputDecoration(
+                            labelText: 'Order Status',
+                            hintText: 'Order Status',
+                            filled: true, // Enable filling of the input
+                            fillColor: Colors.grey[
+                                200], // Set light grey color as the background
+                            border: OutlineInputBorder(
+                              // Define the border
+                              borderRadius: BorderRadius.circular(
+                                  10.0), // Circular rounded border
+                              borderSide: BorderSide.none, // No border side
+                            ),
+                          ),
+                          initialValue: orderAccepted?.orderStatus,
+                          readOnly: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  ElevatedButton(
+                    onPressed: () async {
+                      pickupOrder().then((value) {
+                        print("Value $value ");
+                        if (value != null) {
+                          if (value.orderInfo != null) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => OnRoutePage(
+                                  order: value.orderInfo!,
+                                  orderId: orderAccepted!.id,
+                                ),
+                              ),
+                            );
+                          } else if (value.success == true) {
+                            _showQRCodeDialog(context);
+                          } else if (value.success == false) {
+                            _showOrderNotPackedDialog(
+                                context, "ORDER NOT PACKED");
+                          }
+                        } else {
+                          _showOrderNotPackedDialog(context, "ERROR");
+                        }
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromRGBO(98, 0, 238, 1),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 65, vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text(
+                      "Pick Up Order",
+                      style: TextStyle(
+                          fontSize: 22,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 25),
-              FormBuilderTextField(
-                name: 'partnerstatus',
-                decoration: InputDecoration(
-                  labelText: 'Partner Status',
-                  hintText: 'Partner Status',
-                  filled: true, // Enable filling of the input
-                  fillColor: Colors
-                      .grey[200], // Set light grey color as the background
-                  border: OutlineInputBorder(
-                    // Define the border
-                    borderRadius:
-                        BorderRadius.circular(10.0), // Circular rounded border
-                    borderSide: BorderSide.none, // No border side
-                  ),
-                ),
-                initialValue: widget.order.deliveryPartnerStatus,
-                readOnly: true,
-              ),
-              const SizedBox(height: 50),
-              ElevatedButton(
-                onPressed: () async {
-                  pickupOrder().then((value) {
-                    print("Value $value ");
-                    if (value != null) {
-                      if (value.orderInfo != null) {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => OnRoutePage(
-                              order: value.orderInfo!,
-                              orderId: widget.order.id,
-                            ),
-                          ),
-                        );
-                      } else if (value.success == true) {
-                        _showQRCodeDialog(context);
-                      } else if (value.success == false) {
-                        _showOrderNotPackedDialog(context, "ORDER NOT PACKED");
-                      }
-                    } else {
-                      _showOrderNotPackedDialog(context, "ERROR");
-                    }
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromRGBO(98, 0, 238, 1),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 65, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: const Text(
-                  "Pick Up Order",
-                  style: TextStyle(
-                      fontSize: 22,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
+    );
   }
 
   Widget buildDefaultBottomBar() {
@@ -489,11 +659,16 @@ class _HomePageState extends State<HomePage> {
               ),
             );
           } else if (value != null) {
+            orderAccepted = value;
+            currentState = "Pickup";
+            shouldShowAppBar = false;
+            /*
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => OrderAssignedPage(order: value),
               ),
             );
+            */
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -543,11 +718,16 @@ class _HomePageState extends State<HomePage> {
                       ),
                     );
                   } else if (value != null) {
+                    orderAccepted = value;
+                    currentState = "Pickup";
+                    shouldShowAppBar = false;
+                    /*
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => OrderAssignedPage(order: value),
                       ),
                     );
+                    */
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
