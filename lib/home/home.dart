@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:delivery/home/order/assign.dart';
@@ -21,6 +22,7 @@ class _HomePageState extends State<HomePage> {
   bool isCheckingOrders = false;
   String greetingName = "Partner"; // Default greeting name
   final _storage = const FlutterSecureStorage();
+  Duration duration = const Duration(minutes: 1); // Starting point of the timer
 
   @override
   void initState() {
@@ -48,7 +50,7 @@ class _HomePageState extends State<HomePage> {
     });
 
     // Simulate a network request
-    String phone = '1234567890';
+    final phone = await _storage.read(key: "phone");
     await Future.delayed(const Duration(seconds: 2)); // Simulate network delay
 
     final response = await http.post(
@@ -57,7 +59,7 @@ class _HomePageState extends State<HomePage> {
         'Content-Type': 'application/json; charset=UTF-8',
       },
       body: jsonEncode(<String, String>{
-        'phone': phone,
+        'phone': phone!,
       }),
     );
 
@@ -67,6 +69,7 @@ class _HomePageState extends State<HomePage> {
         orderAssigned = OrderAssigned.fromJson(jsonDecode(response.body));
         isCheckingOrders = false;
       });
+      startTimer();
     } else {
       // Handle error...
       setState(() {
@@ -104,6 +107,19 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void startTimer() {
+    Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (duration.inSeconds == 0) {
+        timer.cancel();
+        // Handle what happens when the timer reaches 0
+      } else {
+        setState(() {
+          duration = duration - const Duration(seconds: 1);
+        });
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -138,7 +154,9 @@ class _HomePageState extends State<HomePage> {
                   );
                 }),
           )),
-      body: SingleChildScrollView(
+      body: Container(),
+      /*
+      SingleChildScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -170,27 +188,40 @@ class _HomePageState extends State<HomePage> {
                 ? buildOrderAssignedWidget()
                 : buildNoOrderWidget(context),
             const SizedBox(height: 15),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 10),
-              height: MediaQuery.of(context).size.height * 0.18,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  GestureDetector(
-                    onTap: () {},
-                    child: buildSlideableWidget(context, 'History'),
-                  ),
-                  GestureDetector(
-                    onTap: () {},
-                    child: buildSlideableWidget(context, 'Earnings'),
-                  ),
-                  // Add more GestureDetector widgets here as needed
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
           ],
         ),
+      ),
+      */
+      bottomNavigationBar: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          orderAssigned == null
+              ? GestureDetector(
+                  onTap: () {
+                    if (!isCheckingOrders) {
+                      checkForOrders();
+                    }
+                  },
+                  child: isCheckingOrders
+                      ? Center(
+                          child: Container(
+                            height: MediaQuery.of(context).size.height * 0.1,
+                            width: MediaQuery.of(context).size.width * 0.85,
+                            padding: const EdgeInsets.all(10),
+                            child: const LinearProgressIndicator(
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.blue),
+                            ),
+                          ),
+                        )
+                      : buildCheckOrdersTile(context),
+                )
+              : Container(),
+          orderAssigned != null
+              ? buildOrderAssignedWidget()
+              : buildNoOrderWidget(context),
+          const SizedBox(height: 10),
+        ],
       ),
     );
   }
@@ -292,7 +323,7 @@ class _HomePageState extends State<HomePage> {
     return GestureDetector(
       onTap: () {},
       child: Container(
-        height: MediaQuery.of(context).size.height * 0.3,
+        height: MediaQuery.of(context).size.height * 0.20,
         width: MediaQuery.of(context).size.width * 0.85,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(15), // Rounded borders
@@ -316,7 +347,6 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
                 acceptOrder().then((value) {
@@ -352,29 +382,28 @@ class _HomePageState extends State<HomePage> {
                       5), // Adjust for more squarish shape
                 ),
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 30,
+                    horizontal: 45,
                     vertical: 15), // Inner padding of the button
               ),
               child: const Text(
                 'Accept Order',
                 style: TextStyle(
-                    fontSize: 28,
+                    fontSize: 32,
                     color: Colors.black,
                     fontWeight: FontWeight.normal),
               ),
             ),
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  orderAssigned = null;
-                });
-              },
-              child: const Text(
-                'Skip Order',
-                style: TextStyle(fontSize: 20, color: Colors.white),
+            const SizedBox(
+              height: 10,
+            ),
+            Text(
+              "${duration.inMinutes.remainder(60).toString().padLeft(2, '0')}:${(duration.inSeconds.remainder(60)).toString().padLeft(2, '0')}",
+              style: const TextStyle(
+                fontSize: 24,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
               ),
-            )
+            ),
           ],
         ),
       ),
