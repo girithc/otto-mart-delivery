@@ -359,10 +359,21 @@ class _HomePageState extends State<HomePage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: const Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 InkWell(
-                  child: Icon(Icons.arrow_back_rounded),
+                  child: Row(
+                    children: [
+                      Icon(Icons.arrow_back_rounded),
+                      SizedBox(
+                        width: 5,
+                      ),
+                      Text(
+                        "back",
+                        style: TextStyle(fontSize: 18),
+                      )
+                    ],
+                  ),
                 ),
                 SizedBox(
                   width: 5,
