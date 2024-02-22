@@ -351,12 +351,13 @@ class _HomePageState extends State<HomePage> {
     return Container(
       alignment: Alignment.bottomCenter,
       color: Colors.white,
-      height: MediaQuery.of(context).size.height * 0.45,
+      height: MediaQuery.of(context).size.height * 0.5,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         mainAxisSize: MainAxisSize.max,
         children: [
           Container(
+            height: MediaQuery.of(context).size.height * 0.08,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: const Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -375,13 +376,6 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                 ),
-                SizedBox(
-                  width: 5,
-                ),
-                Text(
-                  "back",
-                  style: TextStyle(fontSize: 18),
-                )
               ],
             ),
           ),
@@ -534,7 +528,7 @@ class _HomePageState extends State<HomePage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromRGBO(98, 0, 238, 1),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 65, vertical: 15),
+                          horizontal: 40, vertical: 20),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
