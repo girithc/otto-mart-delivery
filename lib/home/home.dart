@@ -81,24 +81,40 @@ class _HomePageState extends State<HomePage> {
       'phone': phone,
     };
 
-    final response = await networkService.postWithAuth(
-        '/delivery-partner-check-order', // Adjusted endpoint
-        additionalData: body);
+    try {
+      final response = await networkService.postWithAuth(
+          '/delivery-partner-check-order', // Adjusted endpoint
+          additionalData: body);
 
-    if (response.statusCode == 200) {
-      print(response.body);
+      if (response != null && response.body != null) {
+        print("Response: ${response.body} ");
+        if (response.statusCode == 200) {
+          setState(() {
+            orderAssigned = OrderAssigned.fromJson(jsonDecode(response.body));
+            isCheckingOrders = false;
+            currentState = "Accept";
+            shouldShowAppBar = false;
+          });
+          startTimer();
+        } else {
+          // Handle non-200 responses...
+          setState(() {
+            isCheckingOrders = false;
+          });
+        }
+      } else {
+        // Handle null response or null body...
+        print("Response or response body is null");
+        setState(() {
+          isCheckingOrders = false;
+        });
+      }
+    } catch (e) {
+      // Handle exceptions...
       setState(() {
-        orderAssigned = OrderAssigned.fromJson(jsonDecode(response.body));
-        isCheckingOrders = false;
-        currentState = "Accept";
-        shouldShowAppBar = false;
-      });
-      startTimer();
-    } else {
-      // Handle error...
-      setState(() {
         isCheckingOrders = false;
       });
+      print("Exception caught: $e");
     }
   }
 
@@ -554,7 +570,7 @@ class _HomePageState extends State<HomePage> {
     // Return a default bottom navigation bar
     return Container(
       color: Colors.white,
-      height: MediaQuery.of(context).size.height * 0.25,
+      height: MediaQuery.of(context).size.height * 0.2,
       margin: const EdgeInsets.only(bottom: 10),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.end,
@@ -588,11 +604,11 @@ class _HomePageState extends State<HomePage> {
         }
       },
       child: Container(
-        height: MediaQuery.of(context).size.height * 0.2,
+        height: MediaQuery.of(context).size.height * 0.15,
         width: MediaQuery.of(context).size.width * 0.85,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(15), // Rounded borders
-          color: Colors.white,
+          color: Colors.transparent,
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.25), // Shadow color
@@ -632,15 +648,6 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ],
                 ),
-              ),
-            ),
-            const Center(
-              child: Text(
-                'No Current Order',
-                style: TextStyle(
-                    fontSize: 25,
-                    color: Colors.black54,
-                    fontWeight: FontWeight.normal),
               ),
             ),
           ],
@@ -861,30 +868,31 @@ class PickupOrderInfo {
   final String
       orderDate; // Assuming orderDate is a string, change if it's a DateTime
   final String orderStatus;
+  final int amountToCollect;
 
-  PickupOrderInfo({
-    required this.customerName,
-    required this.customerPhone,
-    required this.latitude,
-    required this.longitude,
-    required this.lineOneAddress,
-    required this.lineTwoAddress,
-    required this.streetAddress,
-    required this.orderDate,
-    required this.orderStatus,
-  });
+  PickupOrderInfo(
+      {required this.customerName,
+      required this.customerPhone,
+      required this.latitude,
+      required this.longitude,
+      required this.lineOneAddress,
+      required this.lineTwoAddress,
+      required this.streetAddress,
+      required this.orderDate,
+      required this.orderStatus,
+      required this.amountToCollect});
 
   factory PickupOrderInfo.fromJson(Map<String, dynamic> json) {
     return PickupOrderInfo(
-      customerName: json['customer_name'],
-      customerPhone: json['customer_phone'],
-      latitude: json['latitude'],
-      longitude: json['longitude'],
-      lineOneAddress: json['line_one_address'],
-      lineTwoAddress: json['line_two_address'],
-      streetAddress: json['street_address'],
-      orderDate: json['order_date'],
-      orderStatus: json['order_status'],
-    );
+        customerName: json['customer_name'],
+        customerPhone: json['customer_phone'],
+        latitude: json['latitude'],
+        longitude: json['longitude'],
+        lineOneAddress: json['line_one_address'],
+        lineTwoAddress: json['line_two_address'],
+        streetAddress: json['street_address'],
+        orderDate: json['order_date'],
+        orderStatus: json['order_status'],
+        amountToCollect: json['amount_to_collect']);
   }
 }

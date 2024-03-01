@@ -135,6 +135,26 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
     }
   }
 
+  fetchOrderDetails() async {
+    final networkService = NetworkService();
+
+    Map<String, dynamic> body = {
+      'phone': widget.customerPhone,
+      'sales_order_id': widget.orderId,
+    };
+
+    final response = await networkService.postWithAuth(
+        '/delivery-partner-get-order-details',
+        additionalData: body);
+
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      print('Order Details: $responseData');
+    } else {
+      print('Failed to fetch order details: ${response.statusCode}');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
