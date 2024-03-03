@@ -191,10 +191,8 @@ class _HomePageState extends State<HomePage> {
   void _showQRCodeDialog(BuildContext context) async {
     final String? phone = await _storage.read(key: 'phone');
 
-    // Ensure phone is not null, otherwise, use a default value or handle the error
     final String phoneValue = phone ?? 'Unknown';
 
-    // Use the phoneValue in your data string
     final String data = "$phoneValue-${orderAccepted?.id}";
 
     showDialog(
