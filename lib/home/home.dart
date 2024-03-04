@@ -36,8 +36,9 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _loadName();
     checkForOrders();
+
+    _loadName();
   }
 
   final Completer<GoogleMapController> _controller =

@@ -161,10 +161,9 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
       appBar: AppBar(
         title: const Text('Complete Delivery'),
       ),
-      body: Center(
+      body: Container(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.end,
           children: <Widget>[
             if (_image != null) // This adds margin around the container
               Container(
@@ -192,101 +191,249 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
                   child: Image.file(_image!),
                 ),
               ),
-            ElevatedButton(
-              onPressed: _takePicture,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 25, vertical: 15),
-                shape: RoundedRectangleBorder(
+            buildProgess(),
+            Container(
+              alignment: Alignment.centerLeft,
+              child: Text("Amount"),
+            ),
+            SizedBox(height: 5),
+            TextField(
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.camera_enhance_outlined),
-                  SizedBox(
-                    width: 5,
+              readOnly: true,
+              controller:
+                  TextEditingController(text: widget.orderId.toString()),
+              enabled: false,
+            ),
+            SizedBox(height: 20),
+            Container(
+              alignment: Alignment.centerLeft,
+              child: Text("Amount Collected"),
+            ),
+            SizedBox(height: 5),
+            TextField(
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              readOnly: true,
+              controller:
+                  TextEditingController(text: widget.orderId.toString()),
+              enabled: false,
+            ),
+            _image == null
+                ? ElevatedButton(
+                    onPressed: _takePicture,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 25, vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.camera_enhance_outlined),
+                        SizedBox(
+                          width: 5,
+                        ),
+                        Text(
+                          'Take Picture',
+                          style: TextStyle(
+                              color: Color.fromRGBO(98, 0, 238, 1),
+                              fontSize: 18),
+                        ),
+                      ],
+                    ),
+                  )
+                : ElevatedButton(
+                    onPressed: () {
+                      if (_image != null) {
+                        submitOrder(context);
+                      } else {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              backgroundColor: Colors.white,
+                              surfaceTintColor: Colors.white,
+                              elevation: 4.0,
+                              shape: const RoundedRectangleBorder(
+                                // Set the shape of the dialog
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(8)),
+                              ),
+                              title: const Text("Take Picture"),
+                              content: const Center(
+                                child: Text('Please take picture'),
+                              ),
+                              actions: <Widget>[
+                                TextButton(
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    backgroundColor: const Color.fromRGBO(
+                                        98, 0, 238, 1), // Button text color
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Close',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromRGBO(98, 0, 238, 1),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 65, vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.check_box_rounded,
+                          color: Colors.white,
+                        ),
+                        SizedBox(
+                          width: 5,
+                        ),
+                        Text(
+                          'Complete Order',
+                          style: TextStyle(color: Colors.white, fontSize: 18),
+                        ),
+                      ],
+                    ),
                   ),
-                  Text(
-                    'Take Picture',
-                    style: TextStyle(
-                        color: Color.fromRGBO(98, 0, 238, 1), fontSize: 18),
-                  ),
-                ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildCompleteOrderWidget(BuildContext context) {
+    return GestureDetector(
+      onTap: () {},
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.15,
+        width: MediaQuery.of(context).size.width * 0.85,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15), // Rounded borders
+          color: Colors.transparent,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.25), // Shadow color
+              spreadRadius: 0,
+              blurRadius: 20, // Increased shadow blur
+              offset: const Offset(0, 10), // Increased vertical offset
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Center(
+              child: Container(
+                height: MediaQuery.of(context).size.height * 0.1,
+                width: MediaQuery.of(context).size.width * 0.85,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15), // Rounded borders
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.25), // Shadow color
+                      spreadRadius: 0,
+                      blurRadius: 20, // Increased shadow blur
+                      offset: const Offset(0, 10), // Increased vertical offset
+                    ),
+                  ],
+                ),
+                // Rest of your container styling...
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.refresh, color: Colors.black, size: 30),
+                    SizedBox(width: 10),
+                    Text(
+                      'Complete Order',
+                      style: TextStyle(fontSize: 25, color: Colors.black),
+                    ),
+                  ],
+                ),
               ),
             ),
-            buildProgess(),
-            const SizedBox(height: 15),
-            ElevatedButton(
-              onPressed: () {
-                if (_image != null) {
-                  submitOrder(context);
-                } else {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        backgroundColor: Colors.white,
-                        surfaceTintColor: Colors.white,
-                        elevation: 4.0,
-                        shape: const RoundedRectangleBorder(
-                          // Set the shape of the dialog
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
-                        ),
-                        title: const Text("Take Picture"),
-                        content: const Center(
-                          child: Text('Please take picture'),
-                        ),
-                        actions: <Widget>[
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor: const Color.fromRGBO(
-                                  98, 0, 238, 1), // Button text color
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: const Text(
-                              'Close',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromRGBO(98, 0, 238, 1),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 65, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildTakePictureWidget(BuildContext context) {
+    return GestureDetector(
+      onTap: () {},
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.15,
+        width: MediaQuery.of(context).size.width * 0.85,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15), // Rounded borders
+          color: Colors.transparent,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.25), // Shadow color
+              spreadRadius: 0,
+              blurRadius: 20, // Increased shadow blur
+              offset: const Offset(0, 10), // Increased vertical offset
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Center(
+              child: Container(
+                height: MediaQuery.of(context).size.height * 0.1,
+                width: MediaQuery.of(context).size.width * 0.85,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15), // Rounded borders
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.25), // Shadow color
+                      spreadRadius: 0,
+                      blurRadius: 20, // Increased shadow blur
+                      offset: const Offset(0, 10), // Increased vertical offset
+                    ),
+                  ],
                 ),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.check_box_rounded,
-                    color: Colors.white,
-                  ),
-                  SizedBox(
-                    width: 5,
-                  ),
-                  Text(
-                    'Complete Order',
-                    style: TextStyle(color: Colors.white, fontSize: 18),
-                  ),
-                ],
+                // Rest of your container styling...
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.refresh, color: Colors.black, size: 30),
+                    SizedBox(width: 10),
+                    Text(
+                      'Complete Order',
+                      style: TextStyle(fontSize: 25, color: Colors.black),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
