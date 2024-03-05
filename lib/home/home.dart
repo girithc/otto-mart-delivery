@@ -569,7 +569,7 @@ class _HomePageState extends State<HomePage> {
     // Return a default bottom navigation bar
     return Container(
       color: Colors.white,
-      height: MediaQuery.of(context).size.height * 0.2,
+      height: MediaQuery.of(context).size.height * 0.24,
       margin: const EdgeInsets.only(bottom: 10),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.end,
