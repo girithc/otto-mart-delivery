@@ -32,6 +32,7 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
   OrderDetails? orderDetails;
   bool isLoading = true;
   TextEditingController amountCollectedController = TextEditingController();
+  bool warningSubmitOrder = true;
 
   Future<void> _takePicture() async {
     final ImagePicker picker = ImagePicker();
@@ -119,9 +120,10 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
 
     // Validate amount collected
     final amountCollected = double.tryParse(amountCollectedController.text);
-    if (amountCollected == null ||
-        orderDetails == null ||
-        amountCollected != orderDetails!.subtotal) {
+    if ((amountCollected == null ||
+            orderDetails == null ||
+            amountCollected != orderDetails!.subtotal) &&
+        warningSubmitOrder) {
       // ignore: use_build_context_synchronously
       showDialog(
           context: context,
@@ -140,7 +142,11 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
               ],
             );
           });
+      warningSubmitOrder = false;
+
       return; // Stop further execution if validation fails
+    } else {
+      warningSubmitOrder = false;
     }
 
     final path =
