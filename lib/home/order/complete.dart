@@ -123,7 +123,8 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
     if ((amountCollected == null ||
             orderDetails == null ||
             amountCollected != orderDetails!.subtotal) &&
-        warningSubmitOrder) {
+        warningSubmitOrder &&
+        orderDetails!.paymentType == "cash") {
       // ignore: use_build_context_synchronously
       showDialog(
           context: context,
@@ -265,6 +266,7 @@ class _CompleteDeliveryPageState extends State<CompleteDeliveryPage> {
           : Center(
               child: Container(
                 padding: const EdgeInsets.all(20.0),
+                height: MediaQuery.of(context).size.height * 0.85,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   crossAxisAlignment: CrossAxisAlignment.center,

@@ -12,7 +12,6 @@ final navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (Firebase.apps.isEmpty) {
-    // Check if any Firebase apps have been initialized
     await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform);
   }
