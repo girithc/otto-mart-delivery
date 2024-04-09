@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:delivery/home/home.dart';
+import 'package:delivery/home/home_screen.dart';
 import 'package:delivery/onboarding/login/phone.dart';
 import 'package:delivery/onboarding/login/service.dart';
 import 'package:delivery/utils/network/service.dart';
@@ -217,7 +217,7 @@ class _MyVerifyState extends State<MyVerify> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => const HomePage()),
+                                      builder: (context) => const MyHomePage()),
                                 );
                               } else {
                                 ScaffoldMessenger.of(context)
@@ -271,7 +271,7 @@ class _MyVerifyState extends State<MyVerify> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => const HomePage()),
+                                    builder: (context) => const MyHomePage()),
                               );
                             } else {
                               ScaffoldMessenger.of(context)
@@ -336,7 +336,7 @@ class _MyVerifyState extends State<MyVerify> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => const HomePage()),
+                                      builder: (context) => const MyHomePage()),
                                 );
                               } else {
                                 ScaffoldMessenger.of(context)
